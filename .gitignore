@@ -218,3 +218,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Databricks and secrets
+.databricks/
+*.env
+.env*
+*.pat
+.DS_Store
