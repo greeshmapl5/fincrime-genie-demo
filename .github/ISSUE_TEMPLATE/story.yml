@@ -1,0 +1,49 @@
+name: Story
+description: A user story that one person can finish in a few days
+labels: ["story"]
+body:
+  - type: input
+    id: story_id
+    attributes:
+      label: Story ID
+      description: Matches the file in /backlog/stories (e.g. E1-S1)
+    validations:
+      required: true
+  - type: input
+    id: epic
+    attributes:
+      label: Epic
+      placeholder: E1
+    validations:
+      required: true
+  - type: textarea
+    id: user_story
+    attributes:
+      label: User story
+      placeholder: As a <who>, I want <what>, so that <why>.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: "- [ ] Given ... when ... then ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options: [Must, Should, Could]
+    validations:
+      required: true
+  - type: dropdown
+    id: estimate
+    attributes:
+      label: Estimate (story points)
+      options: ["1", "2", "3", "5"]
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and links
+      description: Docs, decisions, related stories

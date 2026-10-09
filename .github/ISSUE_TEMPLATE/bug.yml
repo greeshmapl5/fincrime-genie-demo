@@ -1,0 +1,25 @@
+name: Bug
+description: Something in the demo or tooling does not work
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Expected vs actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Workspace, cluster, branch, version. Never paste secrets.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact on the demo
+      options: [Blocks the demo, Degrades the demo, Minor]
