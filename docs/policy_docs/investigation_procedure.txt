@@ -1,0 +1,11 @@
+Fictional investigation procedure (demo only, not regulatory guidance)
+
+1. Review the alert and the customer profile.
+2. Check whether the activity meets a documented typology (structuring, rapid pass-through, mule account).
+3. Compare activity with expected monthly volume using inflows only.
+4. Review counterparties that received funds.
+5. Record the decision and rationale: escalate, or close as a false positive with a reason.
+
+Escalation: a case with a typology match and total inflows above 90,000 SEK in 14 days is escalated to a senior investigator within 2 working days.
+
+Boundaries: the assistant provides analysis only. The investigator decides. Use neutral language such as "consistent with". Do not suggest filing a report.
