@@ -1,31 +1,27 @@
 # Demo Storyline
 
-> To be filled by the technical architect. The backlog is derived from this file.
+> Work in progress. The detailed narrative will be refined in a later session. Backlog: see [`backlog/epics.md`](../backlog/epics.md).
 
-## Must-show capabilities
-| # | Capability / Databricks feature | Why it matters to the audience | Priority |
-|---|---|---|---|
-| 1 | _TBD_ | _TBD_ | Must |
-| 2 | _TBD_ | _TBD_ | Should |
+## What the demo shows
+A governed data flow on Databricks, from an operational database to end-user analytics:
 
-## Narrative (booth walkthrough)
-Target length: _TBD_ minutes.
+1. Data in **Lakebase**.
+2. Data in **Unity Catalog**, split into `data_sources` (as loaded) and `data_products` (curated).
+3. A **dashboard** and a **Genie agent** on top of `data_products`.
+4. *(E2)* The same flow running **incrementally with code**.
+5. *(E3)* The same solution **deployed to a new workspace** with Declarative Automation Bundles.
 
-1. **Hook** (_0:00_) — _problem the visitor recognizes_
-2. **Setup** — _context, data, personas_
-3. **Core demo steps** — _step by step, what is clicked/shown, expected result_
-4. **Wow moment** — _the single most impressive thing_
-5. **Close** — _call to action / next step_
+## Delivery stages
+| Stage | Epic | Result |
+|---|---|---|
+| Static MVP | E1 | Everything needed to record a demo video; 3-minute showcase |
+| MVP with code | E2 | Incremental loading with code |
+| Portable solution | E3 | Deployable to new workspaces via bundles |
 
-## Data and environment
-- Datasets: _TBD (no customer data)_
-- Databricks workspace: _TBD_
-- Required services/features: _TBD_
-
-## Fallback plan
-- If live demo fails: _TBD (pre-recorded video, screenshots)_
-
-## Open questions
-- [ ] Exact demo scope and must-show features
+## Open points
+- [ ] Dataset (not chosen)
+- [ ] Which Databricks Free Edition workspace to use, plus ownership and governance
 - [ ] Exact Summit date and booth time slots
-- [ ] Branding or content guidelines from the company/Databricks
+- [ ] Narrative, wow moment and target length
+- [ ] Fallback plan
+- [ ] Branding or content guidelines

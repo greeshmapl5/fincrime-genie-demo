@@ -1,32 +1,34 @@
 # Architecture
 
-> Owned by the technical architect. Keep it short; link to ADRs in `/decisions` for the reasoning.
+> Owned by the technical architect. Keep it short; link to ADRs in `/decisions` for the reasoning. Technical details are intentionally open and will be decided later.
 
-## Overview
-_TBD — one paragraph and a diagram (Mermaid is rendered natively by GitHub)._
-
+## Target data flow
 ```mermaid
 flowchart LR
-    A[Data source] --> B[Databricks workspace]
-    B --> C[Demo app / notebooks]
-    C --> D[Booth presentation]
+    A[Static dataset] --> B[Lakebase tables]
+    B -->|E1 manual copy, E2 incremental with code| C[(Unity Catalog: data_sources)]
+    C -->|E1 manual, E2 incremental with code| D[(Unity Catalog: data_products)]
+    D --> E[Dashboard]
+    D --> F[Genie agent]
 ```
 
 ## Components
-| Component | Purpose | Tech | Owner |
+| Component | Purpose | Epic | Decision status |
 |---|---|---|---|
-| _TBD_ | | | |
+| Lakebase | Operational source tables | E1 | Open |
+| Catalog `data_sources` | Source data as loaded | E1 | Open |
+| Catalog `data_products` | Curated data for consumption | E1 | Open |
+| Dashboard | Analytics on `data_products` | E1 | Open |
+| Genie agent | Natural-language access to `data_products` | E1 | Open |
+| Incremental loading | Lakebase → `data_sources` → `data_products` | E2 | Open (Change Data Feed is one option) |
+| Declarative Automation Bundles | Deploy to new workspaces | E3 | Open |
 
 ## Environments
-| Env | Where | Purpose |
-|---|---|---|
-| dev | _TBD_ | development |
-| demo | _TBD_ | booth / video recording |
+One workspace only; no separate environments. The plan is to use a Databricks Free Edition workspace; which one is still to be decided, as are ownership and governance. Feature availability and limits on Free Edition (Lakebase, Genie, dashboards, bundles) must be verified.
 
 ## Non-functional requirements
-- Reliability: demo must work with poor booth network (offline fallback)
 - Security: no secrets or customer data in the repo
-- Reproducibility: demo can be rebuilt from this repo by a new person
+- Reproducibility: a new person can rebuild the demo from this repo (E2/E3)
 
 ## Related decisions
 See `/decisions`.
