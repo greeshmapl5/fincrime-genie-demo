@@ -1,21 +1,19 @@
 # Epics overview
 
-> Proposed starting epics. They are scope-independent and can be refined once `docs/demo-storyline.md` is filled in.
+Three epics, in this order. Stories will be defined in a later session. Epic files are in [`epics/`](epics/).
 
-| ID | Epic | Goal | Status | Target |
+| ID | Epic | Goal | Priority | Status |
 |---|---|---|---|---|
-| E1 | Project setup & collaboration | Repo, board, Teams notifications, agent workflow working | in-progress | Week 1 |
-| E2 | Demo scope & storyline | Agreed must-show features and booth narrative | backlog | Week 1–2 |
-| E3 | Environment & data | Databricks workspace, access, demo datasets | backlog | Week 2 |
-| E4 | Demo build | Implementation of the demo scenarios | backlog | Week 3–6 |
-| E5 | Demo video | Script, recording, editing, approval | backlog | Week 6–7 |
-| E6 | Rehearsal & booth readiness | Rehearsals, fallback plan, runbook validated by a new person | backlog | Week 7–8 |
+| [E1](epics/E1-static-mvp.md) | Static MVP | Resources to record the demo video: dataset in Lakebase and Unity Catalog (`data_sources`, `data_products`), dashboard and Genie agent on `data_products` | **High** | backlog |
+| [E2](epics/E2-mvp-with-code.md) | MVP with code | Incremental loading with code: Lakebase → `data_sources` → `data_products`, then dashboard refresh | Low | backlog |
+| [E3](epics/E3-declarative-automation-bundles.md) | Declarative Automation Bundles | Package the E2 solution so it can be deployed to new workspaces | Low | backlog |
 
-## Proposed first stories for E1
-- E1-S1: Create GitHub Project board with columns and fields
-- E1-S2: Connect GitHub to the Teams channel
-- E1-S3: Schedule the weekly digest (agent-generated, human-approved)
-- E1-S4: Validate handover — a fresh Claude Code session can summarize status from the repo alone
+## Notes
+- E1 is manual and uses a static dataset. Its final deliverable is a 3-minute showcase that everything needed to record the video is in place. Recording the video is not part of E1.
+- Technical details of E2 (sync mechanism, Change Data Feed, orchestration, simulating increments) are intentionally left for later and will be recorded in `/decisions`.
+- Project setup and collaboration actions (board, Teams, digest) are tracked in `HANDOVER.md`, not as an epic.
 
-## Timeline note
-Exact Summit date is TBD. Plan backwards: booth readiness and rehearsals in the final 2–3 weeks, code freeze one week before.
+## Open points
+- Dataset (not chosen)
+- Workspace, edition, ownership and governance (one workspace only)
+- Summit date and epic target dates
