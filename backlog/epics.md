@@ -4,9 +4,9 @@ Three epics, in this order. Stories will be defined in a later session. Epic fil
 
 | ID | Epic | Goal | Priority | Status |
 |---|---|---|---|---|
-| [E1](epics/E1-static-mvp.md) | Static MVP | Resources to record the demo video: dataset in Lakebase and Unity Catalog (`data_sources`, `data_products`), dashboard and Genie agent on `data_products` | **High** | backlog |
-| [E2](epics/E2-mvp-with-code.md) | MVP with code | Incremental loading with code: Lakebase → `data_sources` → `data_products`, then dashboard refresh | Low | backlog |
-| [E3](epics/E3-declarative-automation-bundles.md) | Declarative Automation Bundles | Package the E2 solution so it can be deployed to new workspaces | Low | backlog |
+| [E1](epics/E1-static-mvp.md) (#2) | Static MVP | Resources to record the demo video: dataset in Lakebase and Unity Catalog (`data_sources`, `data_products`), dashboard and Genie agent on `data_products` | **High** | backlog |
+| [E2](epics/E2-mvp-with-code.md) (#3) | MVP with code | Incremental loading with code: Lakebase → `data_sources` → `data_products`, then dashboard refresh | Low | backlog |
+| [E3](epics/E3-declarative-automation-bundles.md) (#4) | Declarative Automation Bundles | Package the E2 solution so it can be deployed to new workspaces | Low | backlog |
 
 ## Notes
 - E1 is manual and uses a static dataset. Its final deliverable is a 3-minute showcase that everything needed to record the video is in place. Recording the video is not part of E1.

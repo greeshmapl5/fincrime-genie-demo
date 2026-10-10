@@ -5,7 +5,7 @@ status: backlog        # backlog | ready | in-progress | review | done | blocked
 priority: low
 owner: unassigned
 target: TBD
-issue: "#"
+issue: "#3"
 ---
 
 ## Goal
