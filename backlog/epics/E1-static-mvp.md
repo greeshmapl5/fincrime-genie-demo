@@ -40,9 +40,9 @@ _Not yet defined. To be refined in a later session._
 
 ## Open questions
 - Which dataset? (not chosen yet; to be studied)
-- Which workspace and Databricks edition? One workspace only, no separate environments. Workspace choice, ownership and governance are still to be defined.
+- Which workspace? The plan is to use a **Databricks Free Edition** workspace, but which Free Edition workspace to use is still to be decided. One workspace only, no separate environments. Ownership and governance are still to be defined.
 - What exactly is shown in the 3-minute walkthrough?
 
 ## Risks / dependencies
 - Dataset and workspace decisions block everything else in this epic.
-- Lakebase, Genie and dashboard availability depends on the chosen workspace and edition (to verify).
+- Lakebase, Genie and dashboard availability on the chosen Free Edition workspace must be verified, including any limits.

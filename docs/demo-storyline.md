@@ -20,7 +20,7 @@ A governed data flow on Databricks, from an operational database to end-user ana
 
 ## Open points
 - [ ] Dataset (not chosen)
-- [ ] Workspace, edition, ownership and governance
+- [ ] Which Databricks Free Edition workspace to use, plus ownership and governance
 - [ ] Exact Summit date and booth time slots
 - [ ] Narrative, wow moment and target length
 - [ ] Fallback plan

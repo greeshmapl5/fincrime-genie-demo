@@ -21,7 +21,7 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 ## Next 3 steps
 1. Refine the epics and write E1 stories in a second session.
 2. Choose the dataset (open point, to be studied).
-3. Decide which workspace and edition to use, plus ownership and governance.
+3. Decide which Databricks Free Edition workspace to use, plus ownership and governance.
 
 ## Open actions / blockers
 | # | Item | Owner | Status |
@@ -29,7 +29,7 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 | 1 | Create GitHub Project board (columns in `docs/working-agreement.md`) | PM | in progress |
 | 2 | Confirm exact Summit date and epic target dates | PM | open |
 | 3 | Choose the dataset | Architect | open |
-| 4 | Choose workspace and edition; define ownership and governance | PM + architect | open |
+| 4 | Choose which Databricks Free Edition workspace to use; define ownership and governance; verify feature limits | PM + architect | open |
 | 5 | Set up Teams channel + GitHub app notifications | PM | open |
 | 6 | Technical approach for E2 (sync, Change Data Feed, orchestration, simulating increments) | Architect | later |
 

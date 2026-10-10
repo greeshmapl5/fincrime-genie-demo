@@ -24,7 +24,7 @@ flowchart LR
 | Declarative Automation Bundles | Deploy to new workspaces | E3 | Open |
 
 ## Environments
-One workspace only; no separate environments. Which workspace and edition to use, and who owns and governs it, is still to be defined.
+One workspace only; no separate environments. The plan is to use a Databricks Free Edition workspace; which one is still to be decided, as are ownership and governance. Feature availability and limits on Free Edition (Lakebase, Genie, dashboards, bundles) must be verified.
 
 ## Non-functional requirements
 - Security: no secrets or customer data in the repo

@@ -15,5 +15,5 @@ Three epics, in this order. Stories will be defined in a later session. Epic fil
 
 ## Open points
 - Dataset (not chosen)
-- Workspace, edition, ownership and governance (one workspace only)
+- Which Databricks Free Edition workspace to use, plus ownership and governance (one workspace only)
 - Summit date and epic target dates
