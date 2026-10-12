@@ -17,6 +17,9 @@ All content is fictional and synthetic. Free and open source tools where possibl
 - [ ] MLRO dashboard published and refreshed: 29 open, 20 closed as false positive, 7 candidates.
 - [ ] Warm up: run one query in the SQL Editor and one question in the Genie space about 15 minutes before recording.
 - [ ] Daily quota fresh. Do not record near the end of a heavy testing day.
+- [ ] Genie One has chat memory and no setting to turn it off. Delete old test chats (sidebar, chat menu, Delete) so stale answers cannot reappear.
+- [ ] Do a dry run of the scene 4 question. Page icons and a Genie Ontology chip mean a fresh lookup. "Based on the conversation from earlier" or clock icons mean memory: delete that chat and retry.
+- [ ] Publish and edit pages well before recording and wait at least 15 minutes. Never edit a page just before a take.
 
 ## Screen setup
 - [ ] Browser window at a fixed size (for example 1920x1080), zoom 110 to 125 percent so text reads on a small screen.

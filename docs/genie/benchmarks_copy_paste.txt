@@ -1,0 +1,113 @@
+Genie benchmarks, copy and paste version (22 questions with SQL). Fictional synthetic data.
+For each block: paste the QUESTION line into the question box and the SQL into the SQL answer box.
+Expected values and notes are in docs/genie/benchmarks.md.
+
+=== S1 ===
+QUESTION: Which customers look like structuring candidates?
+SQL:
+SELECT customer_id FROM fincrime.gold.structuring_candidates ORDER BY customer_id
+
+=== S2 ===
+QUESTION: How many structuring candidates are there?
+SQL:
+SELECT COUNT(*) AS candidates FROM fincrime.gold.structuring_candidates
+
+=== S3 ===
+QUESTION: Which structuring candidates send more than 90 percent of their transfers to one recipient?
+SQL:
+SELECT customer_id, top_onward_counterparty_share FROM fincrime.gold.structuring_candidates WHERE top_onward_counterparty_share > 0.9 ORDER BY customer_id
+
+=== S4 ===
+QUESTION: Which structuring candidate has an established account, older than a year?
+SQL:
+SELECT customer_id FROM fincrime.gold.structuring_candidates WHERE account_age_days > 365
+
+=== S5 ===
+QUESTION: Which structuring candidates are new accounts opened within 30 days?
+SQL:
+SELECT customer_id FROM fincrime.gold.structuring_candidates WHERE account_age_days <= 30 ORDER BY customer_id
+
+=== S6 ===
+QUESTION: What is the outflow to inflow ratio of customer C0580?
+SQL:
+SELECT outflow_to_inflow_ratio FROM fincrime.gold.structuring_candidates WHERE customer_id = 'C0580'
+
+=== S7 ===
+QUESTION: Which structuring candidates have inflows above their expected monthly volume?
+SQL:
+SELECT customer_id FROM fincrime.gold.structuring_candidates WHERE inflows_exceed_expected_volume ORDER BY customer_id
+
+=== S8 ===
+QUESTION: How many near-threshold cash deposits did customer C0591 make in the last 14 days?
+SQL:
+SELECT near_threshold_deposits FROM fincrime.gold.structuring_candidates WHERE customer_id = 'C0591'
+
+=== S9 ===
+QUESTION: What is the total of the near-threshold deposits for customer C0580?
+SQL:
+SELECT total_near_threshold_deposited FROM fincrime.gold.structuring_candidates WHERE customer_id = 'C0580'
+
+=== C1 ===
+QUESTION: Which counterparties received money from several customers?
+SQL:
+SELECT counterparty_id, distinct_customers_paying FROM fincrime.gold.counterparty_network WHERE distinct_customers_paying >= 3
+
+=== C2 ===
+QUESTION: How much did X9001 receive in the last 30 days and in how many payments?
+SQL:
+SELECT total_received, payment_count FROM fincrime.gold.counterparty_network WHERE counterparty_id = 'X9001'
+
+=== C3 ===
+QUESTION: Which customers sent money to X9001?
+SQL:
+SELECT DISTINCT customer_id FROM fincrime.gold.transactions WHERE counterparty_id = 'X9001' AND direction = 'out' ORDER BY customer_id
+
+=== C4 ===
+QUESTION: What type of counterparty is X9001?
+SQL:
+SELECT DISTINCT counterparty_type FROM fincrime.gold.transactions WHERE counterparty_id = 'X9001'
+
+=== A1 ===
+QUESTION: How many alerts are open, escalated and closed as false positive?
+SQL:
+SELECT status, COUNT(*) AS alerts FROM fincrime.gold.alerts GROUP BY status
+
+=== A2 ===
+QUESTION: Which open alerts are highest priority?
+SQL:
+SELECT alert_id, customer_id, risk_score FROM fincrime.gold.alerts WHERE status = 'Open' AND risk_score >= 0.8 ORDER BY risk_score DESC
+
+=== A3 ===
+QUESTION: How many alerts are there for each typology?
+SQL:
+SELECT typology, COUNT(*) AS alerts FROM fincrime.gold.alerts GROUP BY typology
+
+=== A4 ===
+QUESTION: Which alert is on customer C0580 and what is its status?
+SQL:
+SELECT alert_id, typology, risk_score, status FROM fincrime.gold.alerts WHERE customer_id = 'C0580'
+
+=== A5 ===
+QUESTION: Which alert is on customer C0598?
+SQL:
+SELECT alert_id, typology, risk_score, status FROM fincrime.gold.alerts WHERE customer_id = 'C0598'
+
+=== D1 ===
+QUESTION: How many customers do we have?
+SQL:
+SELECT COUNT(*) AS customers FROM fincrime.gold.customer_360
+
+=== D2 ===
+QUESTION: How many customers are in each risk tier?
+SQL:
+SELECT risk_tier, COUNT(*) AS customers FROM fincrime.gold.customer_360 GROUP BY risk_tier
+
+=== D3 ===
+QUESTION: How many transactions are in the data?
+SQL:
+SELECT COUNT(*) AS transactions FROM fincrime.gold.transactions
+
+=== D4 ===
+QUESTION: How many customers are in each segment?
+SQL:
+SELECT segment, COUNT(*) AS customers FROM fincrime.gold.customer_360 GROUP BY segment
