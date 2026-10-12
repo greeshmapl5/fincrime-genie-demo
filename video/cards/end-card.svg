@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#0F172A"/>
+  <text x="960" y="440" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="96" font-weight="600" fill="#FFFFFF">No More Middleman</text>
+  <text x="960" y="570" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="48" fill="#E2E8F0">Governed. Explainable. The investigator decides.</text>
+  <text x="960" y="680" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="36" fill="#94A3B8">Built on the Databricks Data Intelligence Platform</text>
+  <text x="960" y="1000" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="30" fill="#94A3B8">All data, names and rules are fictional and synthetic. Not regulatory guidance.</text>
+</svg>
