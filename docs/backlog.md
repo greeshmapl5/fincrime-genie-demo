@@ -50,6 +50,7 @@ Status as of 12 October 2026. All content is fictional and synthetic. Sizes are 
 | 3.2 | Gold tables and views with descriptions | All have table and column comments | Done | |
 | 3.3 | Data product documentation | Owner, refresh behaviour, columns and certification tag, per product | In progress | S |
 | 3.4 | Silver layer | Typed and cleaned tables between bronze and gold | Not started | S |
+| 3.6 | Measure rapid pass-through as defined | A column in `structuring_candidates` gives the share of money sent onward within 48 hours of receipt, the page and Genie instructions point to it, and Genie One describes it correctly (it currently claims `outflow_to_inflow_ratio` tests the 48-hour timing, which it does not) | Not started | M |
 | 3.5 | Mask `national_id` | A second role sees masked values. Free Edition has one user, so a masked view may be the demonstration | Not started | M |
 
 ## E4 Genie and dashboard (G1, G2)
