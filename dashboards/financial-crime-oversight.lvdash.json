@@ -1,0 +1,766 @@
+{
+  "datasets": [
+    {
+      "name": "01ed5764",
+      "displayName": "kpis",
+      "queryLines": [
+        "SELECT COUNT_IF(status = 'Open') AS open_alerts,\r\n",
+        "       COUNT_IF(status = 'Open' AND risk_score >= 0.8) AS high_priority_open,\r\n",
+        "       COUNT_IF(status = 'Escalated') AS escalated,\r\n",
+        "       COUNT_IF(status = 'Closed - false positive') AS closed_false_positive,\r\n",
+        "       (SELECT COUNT(*) FROM fincrime.gold.structuring_candidates) AS structuring_candidates\r\n",
+        "FROM fincrime.gold.alerts"
+      ]
+    },
+    {
+      "name": "ed91bf46",
+      "displayName": "alerts_by_typology_status",
+      "queryLines": [
+        "SELECT typology, status, COUNT(*) AS alert_count\r\n",
+        "FROM fincrime.gold.alerts\r\n",
+        "GROUP BY typology, status"
+      ]
+    },
+    {
+      "name": "5c3d592b",
+      "displayName": "escalation_rate_by_typology",
+      "queryLines": [
+        "SELECT typology,\r\n",
+        "       COUNT_IF(status = 'Escalated') AS escalated,\r\n",
+        "       COUNT_IF(status = 'Closed - false positive') AS closed_false_positive,\r\n",
+        "       ROUND(COUNT_IF(status = 'Escalated') / NULLIF(COUNT_IF(status != 'Open'), 0), 2) AS escalation_rate\r\n",
+        "FROM fincrime.gold.alerts\r\n",
+        "GROUP BY typology"
+      ]
+    },
+    {
+      "name": "83b961ed",
+      "displayName": "open_queue",
+      "queryLines": [
+        "SELECT a.alert_id, a.customer_id, c.segment, c.sector, a.typology, a.risk_score, a.alert_date,\r\n",
+        "       DATEDIFF(CAST(d.as_of_ts AS DATE), a.alert_date) AS age_days\r\n",
+        "FROM fincrime.gold.alerts a\r\n",
+        "JOIN fincrime.gold.customer_360 c ON a.customer_id = c.customer_id\r\n",
+        "CROSS JOIN fincrime.gold.data_as_of d\r\n",
+        "WHERE a.status = 'Open'\r\n",
+        "ORDER BY a.risk_score DESC"
+      ]
+    },
+    {
+      "name": "2c644386",
+      "displayName": "candidate_concentration",
+      "queryLines": [
+        "SELECT customer_id, sector, account_age_days, near_threshold_deposits, outflow_to_inflow_ratio,\r\n",
+        "       top_onward_counterparty, top_onward_counterparty_share, open_alert_id\r\n",
+        "FROM fincrime.gold.structuring_candidates\r\n",
+        "ORDER BY top_onward_counterparty_share DESC"
+      ]
+    },
+    {
+      "name": "af744fc1",
+      "displayName": "decisions_per_week",
+      "queryLines": [
+        "SELECT DATE_TRUNC('week', decided_at) AS week, status, COUNT(*) AS decisions\r\n",
+        "FROM fincrime.gold.alerts\r\n",
+        "WHERE status != 'Open'\r\n",
+        "GROUP BY 1, 2\r\n",
+        "ORDER BY 1"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "be99fd96",
+      "displayName": "Financial Crime oversight",
+      "layout": [
+        {
+          "widget": {
+            "name": "open_alerts",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "01ed5764",
+                  "fields": [
+                    {
+                      "name": "sum(open_alerts)",
+                      "expression": "SUM(`open_alerts`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Open alerts",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(open_alerts)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "high_priority_open",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "01ed5764",
+                  "fields": [
+                    {
+                      "name": "sum(high_priority_open)",
+                      "expression": "SUM(`high_priority_open`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "High priority open",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(high_priority_open)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 1,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "escalated",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "01ed5764",
+                  "fields": [
+                    {
+                      "name": "sum(escalated)",
+                      "expression": "SUM(`escalated`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Escalated",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(escalated)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "closed_false_positive",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "01ed5764",
+                  "fields": [
+                    {
+                      "name": "sum(closed_false_positive)",
+                      "expression": "SUM(`closed_false_positive`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Closed as false positive",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(closed_false_positive)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 1,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "structuring_candidates",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "01ed5764",
+                  "fields": [
+                    {
+                      "name": "sum(structuring_candidates)",
+                      "expression": "SUM(`structuring_candidates`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Structuring candidates",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(structuring_candidates)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 1,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "alerts_by_typology_status",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ed91bf46",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "typology",
+                      "expression": "`typology`"
+                    },
+                    {
+                      "name": "sum(alert_count)",
+                      "expression": "SUM(`alert_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Alerts by typology and status"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "typology",
+                  "displayName": "typology",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(alert_count)",
+                  "displayName": "alert_count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "status",
+                  "displayName": "status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "escalation_rate_by_typology",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5c3d592b",
+                  "fields": [
+                    {
+                      "name": "typology",
+                      "expression": "`typology`"
+                    },
+                    {
+                      "name": "sum(escalation_rate)",
+                      "expression": "SUM(`escalation_rate`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Escalation rate by typology"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "typology",
+                  "displayName": "typology",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(escalation_rate)",
+                  "displayName": "escalation_rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "typology",
+                  "displayName": "typology",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 4,
+            "width": 6,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "candidate_concentration_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "2c644386",
+                  "fields": [
+                    {
+                      "name": "sector",
+                      "expression": "`sector`"
+                    },
+                    {
+                      "name": "sum(top_onward_counterparty_share)",
+                      "expression": "SUM(`top_onward_counterparty_share`)"
+                    },
+                    {
+                      "name": "customer_id",
+                      "expression": "`customer_id`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Share of transfers going to one recipient"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(top_onward_counterparty_share)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "customer_id",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "color": {
+                  "fieldName": "sector",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "typology_filter",
+            "queries": [
+              {
+                "name": "dashboards/01f1c61c2734146083f8f8f3d25f6b4c/datasets/01f1c61c54451ff89b136ce39b603fbd_typology",
+                "query": {
+                  "datasetName": "ed91bf46",
+                  "fields": [
+                    {
+                      "name": "typology",
+                      "expression": "`typology`"
+                    },
+                    {
+                      "name": "typology_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1c61c2734146083f8f8f3d25f6b4c/datasets/01f1c61c5e191267a28f1c01fc97e535_typology",
+                "query": {
+                  "datasetName": "5c3d592b",
+                  "fields": [
+                    {
+                      "name": "typology",
+                      "expression": "`typology`"
+                    },
+                    {
+                      "name": "typology_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1c61c2734146083f8f8f3d25f6b4c/datasets/01f1c61c67511be98c1c057ac53112ff_typology",
+                "query": {
+                  "datasetName": "83b961ed",
+                  "fields": [
+                    {
+                      "name": "typology",
+                      "expression": "`typology`"
+                    },
+                    {
+                      "name": "typology_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Typology",
+                  "fields": []
+                }
+              },
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "typology",
+                    "queryName": "dashboards/01f1c61c2734146083f8f8f3d25f6b4c/datasets/01f1c61c54451ff89b136ce39b603fbd_typology"
+                  },
+                  {
+                    "fieldName": "typology",
+                    "queryName": "dashboards/01f1c61c2734146083f8f8f3d25f6b4c/datasets/01f1c61c5e191267a28f1c01fc97e535_typology"
+                  },
+                  {
+                    "fieldName": "typology",
+                    "queryName": "dashboards/01f1c61c2734146083f8f8f3d25f6b4c/datasets/01f1c61c67511be98c1c057ac53112ff_typology"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 4,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "open_queue_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "83b961ed",
+                  "fields": [
+                    {
+                      "name": "alert_id",
+                      "expression": "`alert_id`"
+                    },
+                    {
+                      "name": "customer_id",
+                      "expression": "`customer_id`"
+                    },
+                    {
+                      "name": "segment",
+                      "expression": "`segment`"
+                    },
+                    {
+                      "name": "sector",
+                      "expression": "`sector`"
+                    },
+                    {
+                      "name": "typology",
+                      "expression": "`typology`"
+                    },
+                    {
+                      "name": "risk_score",
+                      "expression": "`risk_score`"
+                    },
+                    {
+                      "name": "alert_date",
+                      "expression": "`alert_date`"
+                    },
+                    {
+                      "name": "age_days",
+                      "expression": "`age_days`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Open alert queue"
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "alert_id"
+                  },
+                  {
+                    "fieldName": "customer_id"
+                  },
+                  {
+                    "fieldName": "segment"
+                  },
+                  {
+                    "fieldName": "sector"
+                  },
+                  {
+                    "fieldName": "typology"
+                  },
+                  {
+                    "fieldName": "risk_score"
+                  },
+                  {
+                    "fieldName": "alert_date"
+                  },
+                  {
+                    "fieldName": "age_days"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
+            "width": 12,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "decisions_per_week_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "af744fc1",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "week",
+                      "expression": "`week`"
+                    },
+                    {
+                      "name": "sum(decisions)",
+                      "expression": "SUM(`decisions`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Decisions per week"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "week",
+                  "displayName": "week",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(decisions)",
+                  "displayName": "decisions",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "status",
+                  "displayName": "status",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 26,
+            "width": 12,
+            "height": 7
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

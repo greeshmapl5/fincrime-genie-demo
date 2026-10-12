@@ -96,6 +96,7 @@ Features and menus change, especially Beta ones, so re-check before relying on a
 ## Synthetic data pipeline and Genie results on the gold views
 
 - Pipeline: `src/00_lakebase_case_decisions.sql` (Lakebase), `src/01_generate_bronze_data.py`, `src/02_build_gold_data_products.py`. Run in that order. The verification cell at the end of 02 passed on Databricks.
+- The MLRO dashboard (`dashboards/financial-crime-oversight.lvdash.json`) reads the gold views. Recording a decision in Lakebase (an `INSERT` into `case_decisions`) was reflected on the published dashboard within seconds of a refresh. To import it: Dashboards list, then the import option, then choose the file. The datasets reference `fincrime.gold`, so run the data notebooks first.
 - A first version of 02 produced a wrong share (1.0 for every customer) because the window function ran after the row filter. The built-in assertions caught it. Check the assertions after any change.
 - With the logic in gold views (`structuring_candidates`, `counterparty_network`, `alerts`), Genie answered correctly in all four demo questions: seven structuring candidates, the ring versus the seasonal florist (89 to 98 percent of transfers to one recipient against 27 percent), X9001 as the only shared counterparty (6 customers), and alert status counts of 29 open, 20 escalated and 20 closed.
 - Written counts in the narrative still slipped once ("five of six" where the data shows six). Tables and charts were right. Read from them, not from the paragraph.
