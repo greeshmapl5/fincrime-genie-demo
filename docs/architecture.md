@@ -10,6 +10,9 @@ flowchart LR
     C -->|E1 manual, E2 incremental with code| D[(Unity Catalog: data_products)]
     D --> E[Dashboard]
     D --> F[Genie agent]
+    G[Fictional policy documents] --> H[Agent Bricks Knowledge Assistant]
+    F -. optional .-> I[Supervisor]
+    H -. optional .-> I
 ```
 
 ## Components
@@ -20,6 +23,8 @@ flowchart LR
 | Catalog `data_products` | Curated data for consumption | E1 | Open |
 | Dashboard | Analytics on `data_products` | E1 | Open |
 | Genie agent | Natural-language access to `data_products` | E1 | Open |
+| Agent Bricks Knowledge Assistant | Cited answers from fictional policy documents | E1 | Blocked: workspace reports `NO_AVAILABLE_PHAROS_DEPLOYMENTS` |
+| Supervisor | Optional combined Genie and policy answers | E1 | Optional |
 | Incremental loading | Lakebase → `data_sources` → `data_products` | E2 | Open (Change Data Feed is one option) |
 | Declarative Automation Bundles | Deploy to new workspaces | E3 | Open |
 

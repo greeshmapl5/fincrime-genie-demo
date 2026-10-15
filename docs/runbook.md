@@ -24,6 +24,8 @@ _Add demo-specific setup (CLI, Python env, Databricks profile) as it is defined.
 ## 3. Run the demo
 _TBD — numbered steps from cold start to finished demo._
 
+For the Agent Bricks policy assistant setup and evaluation procedure, see [`demo/agent-bricks/README.md`](../demo/agent-bricks/README.md). A workspace with Agent Bricks deployment support is required.
+
 ## 4. Record the demo video
 _TBD — tool, resolution, script, where the final file is stored._
 
