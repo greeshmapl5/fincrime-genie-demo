@@ -1,0 +1,29 @@
+name: Epic
+description: A group of related stories with one goal
+labels: ["epic"]
+body:
+  - type: input
+    id: epic_id
+    attributes:
+      label: Epic ID
+      description: Matches the file in /backlog/epics (e.g. E1)
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope (in / out)
+  - type: textarea
+    id: success
+    attributes:
+      label: Success criteria
+  - type: input
+    id: target
+    attributes:
+      label: Target week or date
