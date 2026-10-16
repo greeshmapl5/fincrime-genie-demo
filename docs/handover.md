@@ -34,6 +34,8 @@ A demo where a bank investigator asks questions in plain English (Genie), gets a
 | `docs/workspace-findings.md` | **Read this first**: what works, what does not, and the quirks |
 | `docs/backlog.md` | Nine epics with stories, sizes and statuses |
 | `docs/policy_docs/` | A fictional procedure document, used for the Knowledge Assistant test |
+| `docs/load-procedure.md` | Template for loading the dataset into Lakebase (to be filled when story 2 is built) |
+| `docs/verify-decision-loop.md` | Step-by-step check that a decision recorded in Lakebase changes alert status downstream |
 
 ## 4. How to rebuild it (in order)
 
@@ -75,6 +77,8 @@ DELETE FROM case_decisions WHERE alert_id = 'A0107';
 ```
 
 The dashboard should show **29 open, 20 closed as false positive, 7 structuring candidates**.
+
+The full check, with before and after queries and a troubleshooting table, is in `docs/verify-decision-loop.md`. Run it after any change to the load, the catalog layout or the gold views.
 
 ## 8. Leftovers from testing (safe to delete)
 
