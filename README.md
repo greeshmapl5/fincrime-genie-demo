@@ -62,3 +62,5 @@ To be completed after the bundle is built.
 
 ### Status
 Under development. Content owner: [name].
+
+Story 9 note: the original Knowledge Assistant path is retired in the tested accounts. The replacement path is a Genie Agent backed by a policy table (`workspace.default.policy_docs`), with the smoke test validated in `mydev-ws`.

@@ -19,7 +19,7 @@ Status as of 12 October 2026. All content is fictional and synthetic. Sizes are 
 | E3 Data mesh structure and data products | 3, 4 | Gold tables and views done. Catalog layout still to align with last year's structure |
 | E4 Genie and dashboard | 5 | Genie tested on four core questions. Dashboard on the new data pending |
 | E5 Domain, discovery, tags and Pages | 6 | Domain and one page done. Full set pending |
-| E6 Unstructured data and Agent Bricks | 7 | **Blocked.** Knowledge Assistant cannot answer on this workspace. Text AI fallback available |
+| E6 Unstructured data and Agent Bricks | 7 | **Blocked.** Knowledge Assistant creation is now refused on two tested workspaces ("legacy feature, use Genie Agents instead"). Text AI fallback available |
 | E7 Story, script and video | G1 | Not started |
 | E8 Reusable deployment | G3 | Not started. The Databricks CLI cannot be installed on the team machine |
 | E9 Risk, compliance and licence | all | Licence answer open, compliance review not scheduled |
@@ -79,7 +79,7 @@ Status as of 12 October 2026. All content is fictional and synthetic. Sizes are 
 | ID | Story | Acceptance criteria | Status | Size |
 |---|---|---|---|---|
 | 6.1 | Report the Knowledge Assistant error to Databricks | Message sent, answer recorded | Not started | S |
-| 6.2 | Retest the Knowledge Assistant periodically | Result logged in `docs/workspace-findings.md` | Ongoing | S |
+| 6.2 | Retest the Knowledge Assistant periodically | Result logged in `docs/workspace-findings.md` | Done (15 Oct 2026): creation now blocked as a legacy feature on two workspaces | S |
 | 6.3 | Fallback: note classification and summary | A gold view with `ai_classify` and `ai_summarize` over `case_notes`, within quota | Not started | M |
 | 6.4 | If it works elsewhere, record the segment | Clip captured and labelled | Blocked | M |
 

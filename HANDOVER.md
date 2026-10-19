@@ -9,7 +9,7 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 ## Status
 - **Phase:** E1 planning and demo preparation. Story 9's fictional policy source and Agent Bricks setup/evaluation instructions are drafted in this branch.
 - **Board:** GitHub Project being created by the PM; deliberately not updated yet.
-- **Story 9 (#6):** Blocked pending a workspace where Agent Bricks Knowledge Assistant can deploy; current workspace reports `NO_AVAILABLE_PHAROS_DEPLOYMENTS`. Policy-answer and evaluation acceptance criteria are not yet demonstrated.
+- **Story 9 (#6):** In review. Knowledge Assistant is retired in dario-ws and mydev-ws, so the policy chatbot is built as a Genie Agent: the "Investigations Analyst" space in dario-ws now includes `fincrime.gold.policy_docs` (`src/03_policy_docs.py`, `src/04_genie_policy_space.py`). Deadline, late-request, out-of-scope and escalation questions pass with section-level citations. Supervisor criterion untested. Awaiting human acceptance.
 - **Demo scope:** E1 includes Genie and an Agent Bricks policy assistant; a combined supervisor remains optional.
 
 ## Epics

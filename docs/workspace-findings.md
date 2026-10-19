@@ -94,6 +94,7 @@ Features and menus change, especially Beta ones, so re-check before relying on a
 - Knowledge Assistant names allow only letters, numbers and dashes. Source type "Files in a Volume", plus a description of the content that the agent uses to decide when to consult it.
 - The UI says the first file usually takes about 15 minutes to process. Our run took noticeably longer (not timed), so create and sync well before any recording.
 - **Answering fails on this workspace.** After the sync completed, the first question in the Playground returned: `[ERROR] Vector search failed for index 'policy-docs': Model is unavailable for clientId ai-builder-interactive. Failed check: EDC. Error Code: NO_AVAILABLE_PHAROS_DEPLOYMENTS`, followed by `500 Internal error`. A retry about 3 minutes later gave the identical error. The index was built, but no model deployment was available to serve the search. We cannot tell from the message whether this is a Free Edition limit, a regional capacity problem or temporary. We did not test the other agent types. The Supervisor Agent probably depends on the same machinery, so we did not spend quota on it.
+- **Creation is now blocked outright, on two separate workspaces and accounts.** Retested on 15 October 2026 via the Databricks CLI (v1.20.0) against `dbc-417d24d1-5086` (`dario-ws` / `mydev-ws` alias, account `xiangyang.guo@capgemini.com`) and separately against a genuinely different workspace `dbc-33134f32-bbb1` (`mydev-ws`, account `xiangyangg7@gmail.com`). On both, `databricks knowledge-assistants create-knowledge-assistant` returned: `Error: Knowledge Assistant is now a legacy feature. New instances can no longer be created for this account. Please use Genie Agents instead.` No Knowledge Assistant exists on either workspace now; the smoke test could not reach the sync or query steps. This is a different failure from `NO_AVAILABLE_PHAROS_DEPLOYMENTS` above (that one was at query time, after a successful create and sync; this one blocks creation itself), so the platform appears to have retired the feature between the two test dates rather than this being a capacity blip. The Databricks message points to Genie Agents as the replacement, which has not yet been evaluated for document Q&A with citations.
 - Fallback for the unstructured-data moment: `ai_classify` and `ai_summarize` over the `case_notes` table, plus Pages for procedure text. Both work without the Knowledge Assistant.
 - `ai_classify` returned the expected label. `ai_summarize` shortened a case but replaced "ten deposits" with "multiple". Treat summaries as drafts.
 
@@ -108,6 +109,16 @@ Features and menus change, especially Beta ones, so re-check before relying on a
 - Residual intent-style wording appeared ("accounts may be opened for specific short-term activity") even after the neutral-language instruction. The instruction list in `docs/genie/instructions.md` was extended.
 - `docs/genie/` holds the final instructions and example SQL for the space.
 
+## Genie replacement path for Story 9 (validated on 15 October 2026)
+
+- The legacy Knowledge Assistant path is retired in the tested accounts. The replacement path is a Genie Agent backed by a UC table that holds the policy text, not by a Knowledge Assistant volume.
+- In `mydev-ws`, a test table was created in `workspace.default.policy_docs` and populated with the fictional investigation policy. A direct SQL query succeeded, confirming the table and content were available.
+- A live smoke test was then run with the Databricks CLI:
+  `databricks genie ask "According to the policy_docs table, what triggers escalation in the fictional review policy?" --warehouse-id c20acb2def2319c8 -p mydev-ws`
+- Result: Genie answered correctly from the table and cited the policy row, including the exact escalation criteria: a typology match plus total inflows above 90,000 SEK in 14 days, escalated to a senior investigator within 2 working days.
+- A second smoke test on the neutral-language and boundary rules also succeeded, with Genie matching the policy text and preserving the “analysis only / investigator decides / neutral language” guardrails.
+- Decision: Story 9 should be treated as a Genie-based policy-doc QA task for this workspace, not as a Knowledge Assistant task, unless a different workspace is later found that still allows Knowledge Assistant creation.
+
 ## Decisions taken from these findings
 
 1. Decisions and case state live in **Lakebase**. `gold.alerts` is a view that joins them, so there is one source of truth.
@@ -115,11 +126,13 @@ Features and menus change, especially Beta ones, so re-check before relying on a
 3. Pages shows the governed business definitions. Genie instructions keep the same text until Pages grounding in the demo flow is proven.
 4. Demo prompts are focused single questions that return a table, rehearsed exactly.
 5. Teams stays roadmap and mock-up. The Knowledge Assistant cannot answer on this workspace, so Agent Bricks is not part of the live demo here. If a squad workspace has it working, that segment can be recorded there and labelled honestly.
+6. Update (dario-ws): the same approach was applied to the existing "Investigations Analyst" space (`01f1c320e2c614abb663065c1dad9b98`) with table `fincrime.gold.policy_docs`; all four eval questions pass when tested with `databricks genie start-conversation <space_id> "<question>" -p dario-ws -o json`, and a data question still works.
+7. For Story 9, the supported replacement is a Genie space backed by a UC policy table and explicit instructions for neutral wording, scope, and citations.
 
 ## Open items
 
 - Licence and sponsor-workspace answer from Legal and Databricks.
-- Knowledge Assistant: ask Databricks whether `NO_AVAILABLE_PHAROS_DEPLOYMENTS` is a known Free Edition limit or a temporary capacity issue, and whether a squad workspace has it working.
+- Knowledge Assistant: now confirmed blocked at creation on two workspaces/accounts as of 15 October 2026 ("legacy feature... Please use Genie Agents instead"), superseding the earlier `NO_AVAILABLE_PHAROS_DEPLOYMENTS` question. Next step is to evaluate a Genie Agent over the policy document as the replacement path for story 9, and confirm with Databricks whether any workspace still permits Knowledge Assistant creation.
 - Chat versus Agent mode comparison for speed and accuracy.
 - Masking test for `national_id` in Genie answers, Benchmarks tab, dashboard "Ask Genie" bar.
 - First run of the new data notebooks and their built-in checks.
