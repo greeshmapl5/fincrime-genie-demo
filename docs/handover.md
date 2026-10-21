@@ -36,6 +36,7 @@ A demo where a bank investigator asks questions in plain English (Genie), gets a
 | `docs/policy_docs/` | A fictional procedure document, used for the Knowledge Assistant test |
 | `docs/load-procedure.md` | Template for loading the dataset into Lakebase (to be filled when story 2 is built) |
 | `docs/verify-decision-loop.md` | Step-by-step check that a decision recorded in Lakebase changes alert status downstream |
+| `docs/rerun-bronze.md` | What happens when you re-run the bronze notebook, what to run afterwards, and how to check it |
 
 ## 4. How to rebuild it (in order)
 
@@ -46,6 +47,8 @@ A demo where a bank investigator asks questions in plain English (Genie), gets a
 5. **Genie space:** paste `docs/genie/instructions.md` and the example SQL, add the six tables and views, run the benchmarks (target 22 of 22).
 6. **Pages:** publish in the order in `pages/README.md`. A domain is required first.
 7. **Dashboard:** import the JSON (Dashboards list, then import). Publish with Share data permission.
+
+To refresh the data later, re-run notebook 01 and then notebook 02. What the re-run replaces and what to check afterwards is in `docs/rerun-bronze.md`.
 
 ## 5. Design decisions worth keeping
 

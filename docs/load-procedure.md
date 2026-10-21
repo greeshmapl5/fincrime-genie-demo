@@ -45,6 +45,8 @@ Fill in the exact commands or notebook names for each step. After each step, run
 
 ## 5. Repeating the load safely
 
+For the current Delta bronze generator (notebook 01), see `docs/rerun-bronze.md`. This section is for the Lakebase load.
+
 - **What is overwritten:** TO FILL (for example, tables are replaced on each run).
 - **What is kept:** TO FILL (for example, decisions recorded after the seed).
 - **Idempotent?** TO FILL. Running the procedure twice must give the same result.
