@@ -1,9 +1,9 @@
 import express from 'express';
-import { createApp, analytics, server } from '@databricks/appkit';
+import { createApp, analytics, genie, server } from '@databricks/appkit';
 import { setupCatalogRoutes } from './catalog.js';
 
 createApp({
-  plugins: [analytics(), server()],
+  plugins: [analytics(), genie(), server()],
   async onPluginsReady(appkit) {
     appkit.server.extend((app) => {
       app.use('/api/catalog', express.json());

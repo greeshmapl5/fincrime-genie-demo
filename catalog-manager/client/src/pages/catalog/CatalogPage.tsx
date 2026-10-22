@@ -42,8 +42,34 @@ function CommentEditor({ value, onSave }: { value: string; onSave: (v: string) =
   );
 }
 
+function ClassificationSelect({
+  value,
+  levels,
+  onChange,
+}: {
+  value: string;
+  levels: string[];
+  onChange: (v: string) => Promise<void>;
+}) {
+  return (
+    <select
+      className="border rounded px-2 py-1 text-sm bg-background"
+      value={value}
+      onChange={(e) => void onChange(e.target.value)}
+    >
+      <option value="">Unclassified</option>
+      {levels.map((l) => (
+        <option key={l} value={l}>
+          {l}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export function CatalogPage() {
   const [tables, setTables] = useState<Row[]>([]);
+  const [levels, setLevels] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [columns, setColumns] = useState<Row[]>([]);
   const [preview, setPreview] = useState<Row[]>([]);
@@ -52,6 +78,7 @@ export function CatalogPage() {
   const loadTables = () => api<Row[]>('/api/catalog/tables').then(setTables).catch((e) => setError(e.message));
   useEffect(() => {
     void loadTables();
+    api<string[]>('/api/catalog/classification-levels').then(setLevels).catch(() => undefined);
   }, []);
 
   const select = async (name: string) => {
@@ -60,6 +87,18 @@ export function CatalogPage() {
     try {
       setColumns(await api<Row[]>(`/api/catalog/tables/${name}/columns`));
       setPreview(await api<Row[]>(`/api/catalog/tables/${name}/preview`));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const saveClassification = async (table: string, level: string, column?: string) => {
+    try {
+      await api(`/api/catalog/tables/${table}/classification`, {
+        method: 'PUT',
+        body: JSON.stringify({ column, level }),
+      });
+      await Promise.all([loadTables(), select(table)]);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -96,6 +135,9 @@ export function CatalogPage() {
               }`}
             >
               {t.table_name}
+              {t.classification && (
+                <span className="ml-2 text-xs opacity-70">[{t.classification}]</span>
+              )}
             </button>
           ))}
         </CardContent>
@@ -110,11 +152,19 @@ export function CatalogPage() {
               <CardHeader>
                 <CardTitle>{selected} — description</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-3">
                 <CommentEditor
                   value={current?.comment ?? ''}
                   onSave={(v) => saveComment(selected, v)}
                 />
+                <div className="flex items-center gap-2 text-sm">
+                  Classification
+                  <ClassificationSelect
+                    value={current?.classification ?? ''}
+                    levels={levels}
+                    onChange={(v) => saveClassification(selected, v)}
+                  />
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -123,9 +173,17 @@ export function CatalogPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {columns.map((c) => (
-                  <div key={c.column_name} className="grid md:grid-cols-[200px_100px_1fr] gap-2 items-center">
+                  <div
+                    key={c.column_name}
+                    className="grid md:grid-cols-[180px_90px_150px_1fr] gap-2 items-center"
+                  >
                     <span className="text-sm font-medium">{c.column_name}</span>
                     <span className="text-xs text-muted-foreground">{c.data_type}</span>
+                    <ClassificationSelect
+                      value={c.classification ?? ''}
+                      levels={levels}
+                      onChange={(v) => saveClassification(selected, v, c.column_name!)}
+                    />
                     <CommentEditor
                       value={c.comment ?? ''}
                       onSave={(v) => saveComment(selected, v, c.column_name!)}

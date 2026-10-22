@@ -6,6 +6,8 @@ const SCHEMA = process.env.SCHEMA_NAME ?? 'gold';
 const WAREHOUSE = process.env.DATABRICKS_WAREHOUSE_ID ?? '';
 const GLOSSARY = `${CATALOG}.${SCHEMA}.business_glossary`;
 const IDENT = /^[A-Za-z0-9_]+$/;
+const TAG = 'classification';
+const LEVELS = ['Public', 'Internal', 'Confidential', 'PII', 'Restricted'];
 
 type Param = { name: string; value: string };
 
@@ -40,9 +42,15 @@ export async function setupCatalogRoutes(app: Application) {
   app.get('/api/catalog/tables', async (_req, res) => {
     try {
       const rows = await run(
-        `SELECT table_name, comment FROM ${CATALOG}.information_schema.tables
-         WHERE table_schema = :schema ORDER BY table_name`,
-        [{ name: 'schema', value: SCHEMA }],
+        `SELECT t.table_name, t.comment, g.tag_value AS classification
+         FROM ${CATALOG}.information_schema.tables t
+         LEFT JOIN ${CATALOG}.information_schema.table_tags g
+           ON g.schema_name = t.table_schema AND g.table_name = t.table_name AND g.tag_name = :tag
+         WHERE t.table_schema = :schema ORDER BY t.table_name`,
+        [
+          { name: 'schema', value: SCHEMA },
+          { name: 'tag', value: TAG },
+        ],
       );
       res.json(rows);
     } catch (e) {
@@ -55,14 +63,39 @@ export async function setupCatalogRoutes(app: Application) {
       const { table } = req.params;
       if (!IDENT.test(table)) return void res.status(400).json({ error: 'Invalid table name' });
       const rows = await run(
-        `SELECT column_name, data_type, comment FROM ${CATALOG}.information_schema.columns
-         WHERE table_schema = :schema AND table_name = :table ORDER BY ordinal_position`,
+        `SELECT c.column_name, c.data_type, c.comment, t.tag_value AS classification
+         FROM ${CATALOG}.information_schema.columns c
+         LEFT JOIN ${CATALOG}.information_schema.column_tags t
+           ON t.schema_name = c.table_schema AND t.table_name = c.table_name
+          AND t.column_name = c.column_name AND t.tag_name = :tag
+         WHERE c.table_schema = :schema AND c.table_name = :table ORDER BY c.ordinal_position`,
         [
           { name: 'schema', value: SCHEMA },
           { name: 'table', value: table },
+          { name: 'tag', value: TAG },
         ],
       );
       res.json(rows);
+    } catch (e) {
+      res.status(500).json({ error: (e as Error).message });
+    }
+  });
+
+  app.get('/api/catalog/classification-levels', (_req, res) => res.json(LEVELS));
+
+  // body: { column?: string, level: string | '' }; empty level removes the tag
+  app.put('/api/catalog/tables/:table/classification', async (req, res) => {
+    try {
+      const { table } = req.params;
+      const { column, level } = req.body ?? {};
+      if (!IDENT.test(table) || (column && !IDENT.test(column)) || (level && !LEVELS.includes(level))) {
+        return void res.status(400).json({ error: 'Invalid request' });
+      }
+      const target = column
+        ? `ALTER TABLE ${CATALOG}.${SCHEMA}.${table} ALTER COLUMN ${column}`
+        : `ALTER TABLE ${CATALOG}.${SCHEMA}.${table}`;
+      await run(level ? `${target} SET TAGS ('${TAG}' = '${level}')` : `${target} UNSET TAGS ('${TAG}')`);
+      res.json({ ok: true });
     } catch (e) {
       res.status(500).json({ error: (e as Error).message });
     }

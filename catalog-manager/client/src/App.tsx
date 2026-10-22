@@ -14,6 +14,7 @@ import {
 } from '@databricks/appkit-ui/react';
 import { Menu } from 'lucide-react';
 import { CatalogPage } from './pages/catalog/CatalogPage';
+import { AskPage } from './pages/ask/AskPage';
 import { GlossaryPage } from './pages/glossary/GlossaryPage';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -37,6 +38,9 @@ function NavLinks({ className, linkClass, onClick }: { className?: string; linkC
     <nav className={className}>
       <NavLink to="/" end className={linkClass} onClick={onClick}>
         Home
+      </NavLink>
+      <NavLink to="/ask" className={linkClass} onClick={onClick}>
+        Ask
       </NavLink>
       <NavLink to="/catalog" className={linkClass} onClick={onClick}>
         Catalog
@@ -89,6 +93,7 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: '/', element: <HomePage /> },
+      { path: '/ask', element: <AskPage /> },
       { path: '/catalog', element: <CatalogPage /> },
       { path: '/glossary', element: <GlossaryPage /> },
     ],
@@ -100,47 +105,29 @@ export default function App() {
 }
 
 function HomePage() {
+  const items = [
+    { to: '/ask', title: 'Ask your data', text: 'Ask questions in natural language and see the SQL behind each answer.' },
+    { to: '/catalog', title: 'Catalog', text: 'Edit table and column descriptions and set data classification.' },
+    { to: '/glossary', title: 'Glossary', text: 'Define business terms that Genie uses to interpret questions.' },
+  ];
   return (
-    <div className="max-w-2xl mx-auto space-y-6 mt-8">
+    <div className="max-w-3xl mx-auto space-y-6 mt-8">
       <div className="text-center">
-        <h2 className="text-3xl font-bold mb-2 text-foreground">
-          Welcome to your Databricks App
-        </h2>
-        <p className="text-lg text-muted-foreground">
-          Powered by Databricks AppKit
-        </p>
+        <h2 className="text-3xl font-bold mb-2 text-foreground">Financial crime data workspace</h2>
+        <p className="text-lg text-muted-foreground">Self-service insight and metadata for business owners</p>
       </div>
-
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">Your app is ready. Explore the resources below to continue building.</p>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <a
-                href="https://github.com/databricks/appkit"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-4 hover:text-primary/80"
-              >
-                AppKit on GitHub →
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://developers.databricks.com/docs/appkit/v0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-4 hover:text-primary/80"
-              >
-                AppKit documentation →
-              </a>
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
+      <div className="grid md:grid-cols-3 gap-4">
+        {items.map((i) => (
+          <NavLink key={i.to} to={i.to}>
+            <Card className="h-full hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>{i.title}</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">{i.text}</CardContent>
+            </Card>
+          </NavLink>
+        ))}
+      </div>
     </div>
   );
 }

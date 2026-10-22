@@ -4,6 +4,8 @@ bundle:
 variables:
   sql_warehouse_id:
     description: SQL Warehouse ID
+  genie_space_id:
+    description: Genie space ID
 
 resources:
   apps:
@@ -25,6 +27,11 @@ resources:
           sql_warehouse:
             id: ${var.sql_warehouse_id}
             permission: CAN_USE
+        - name: genie-space
+          genie_space:
+            name: "Investigations Analyst"
+            space_id: ${var.genie_space_id}
+            permission: CAN_RUN
 
 targets:
   default:
@@ -34,3 +41,4 @@ targets:
 
     variables:
       sql_warehouse_id: dea09e931a40e6e8
+      genie_space_id: 01f1c320e2c614abb663065c1dad9b98
