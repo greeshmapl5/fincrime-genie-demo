@@ -14,12 +14,18 @@ Each file in this folder is the source text for one page. Fields map to the page
 | Business use | Business use section of the body |
 | Related assets and sources | Related assets and Sources lists |
 
+For step-by-step instructions on creating these Pages in the workspace, see `docs/create-pages-in-databricks.md`.
+
 ## Publish order
 1. `structuring.md`
 2. `rapid-pass-through.md`
 3. `activity-vs-expected-volume.md`
 4. `investigation-procedure.md`
 5. `ontology.md`
+6. `concentration.md`
+7. `alert-status-and-case.md`
+8. `new-account.md`
+9. `high-priority-alert.md`
 
 ## After publishing each page
 1. Open the Genie One chat (not the Genie space) in a new chat.
