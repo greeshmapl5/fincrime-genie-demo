@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { NavLink } from 'react-router';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@databricks/appkit-ui/react';
 
 type Row = Record<string, string | null>;
@@ -70,6 +71,10 @@ export function GlossaryPage() {
           <CardTitle>Business glossary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Saving here updates the lakehouse glossary, not Discover Pages.{' '}
+            <NavLink to="/pages" className="underline">Prepare terms for Pages import</NavLink>.
+          </p>
           {rows.length === 0 && <p className="text-muted-foreground text-sm">No terms yet.</p>}
           {rows.map((r) => (
             <div key={r.term} className="border-b pb-2 flex justify-between gap-4">

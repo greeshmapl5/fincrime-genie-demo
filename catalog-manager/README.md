@@ -6,6 +6,103 @@ A Databricks App powered by [AppKit](https://developers.databricks.com/docs/appk
 - **Analytics** -- SQL query execution against Databricks SQL Warehouses
 - **Server** -- Express HTTP server with static file serving and Vite dev mode
 
+## Ask: Genie One MCP
+
+Ask now calls `system.ai.genie_one_mcp` through Unity Gateway, not the
+Investigations Analyst space Conversation API or the retiring Beta MCP endpoint.
+The backend creates a separate MCP client per request using only the Apps proxy's
+`x-forwarded-access-token` and requires `x-forwarded-user`. There is no app
+service-principal fallback or server-side conversation cache.
+
+- Set `DATABRICKS_HOST` and numeric `DATABRICKS_WORKSPACE_ID` in `app.yaml`.
+- Declare `user_api_scopes: [sql, ai-gateway]` in the bundle. Existing users may
+  need to authorize the new scope when reopening the app.
+- Users need access to execute the MCP service and underlying domains/data.
+  A grant to the app service principal does not replace these user permissions.
+- `GET /api/ask/identity` displays the proxy-authenticated caller, never the token.
+- `POST /api/ask` allows only ask, poll, cancel and query-result actions.
+  Follow-ups reuse the conversation ID; polling shows progress every three seconds.
+- Answers retain clickable Page citations, an Explore in Databricks link, an
+  AI disclaimer, and expandable query metadata/results when Genie returns them.
+- Standalone local development deliberately rejects Ask without trusted caller
+  headers. Use a deployed Apps proxy for real user-identity validation; never
+  expose a local server that trusts arbitrary forwarded headers to untrusted users.
+
+Live Page-citation acceptance passed on 2026-10-28 through the deployed app:
+the Financial Crime Page "Concentration of transfers" was cited alongside its
+distinctive 14-day / largest-recipient / 0.94 = 94 percent definition.
+See the [current demo guide](../docs/demo-catalog-manager.md#genie-one-migration-acceptance-2026-10-28).
+The older 2026-10-24 acceptance report describes the previous space-based chat.
+
+## Discover Pages workflow
+
+The **Pages** tab bridges the lakehouse glossary to the documented
+[Discover Pages bulk-import workflow](https://docs.databricks.com/aws/en/uc-semantics/pages#bulk-import-pages).
+It does not call a Pages CRUD API, browse live Pages, publish automatically, or
+synchronize edits in either direction. No documented public Pages CRUD API was
+identified in the official documentation or installed CLI/SDK during implementation.
+
+1. Save definitions on **Glossary**.
+2. Open **Pages**, refresh the glossary, enter an existing Discover domain or
+   subdomain, and select the terms to export.
+3. Review the preview and confirm it contains no sensitive information. Download
+   the proposed Pages document. Owner values and data rows are excluded, but
+   definitions and asset names still require review.
+4. Open `dario-ws`, navigate to **Discover > Pages > Create page**, and open
+   **Genie Code > Bulk import pages**. Attach the document (or paste its contents
+   as source context) and use the suggested import prompt.
+5. Review duplicates, conflicts, definitions, owners, and related assets. Create
+   drafts, then review and publish them in Databricks.
+6. In **Genie One**, ask about the term and check the definition and Page citation.
+
+**Prerequisites and governance:** Pages is an account-level Beta that an account
+admin may need to enable. A domain must exist and the user must have access.
+The Page owner or a curator reviews and publishes drafts. Page content may be
+replicated globally and must not contain PII, regulated data, or sensitive
+information. See the official documentation for current permissions and limitations.
+
+**Important distinctions:**
+- The export is a snapshot of selected terms from `fincrime.gold.business_glossary`.
+  Refresh it after glossary edits; downloading is not publication.
+- Pages feed the human-modeled context of the Genie Ontology used by **Genie One**.
+  Published Pages are available to users with domain access; drafts are only
+  available to their owner.
+- The app's **Ask** tab uses Genie One MCP and can retrieve accessible published
+  Pages. Downloading an export does not publish them.
+- Later glossary changes do not update a Page. Review and update it separately.
+- The workspace link on the Pages tab targets this deployment's `dario-ws`.
+  Update it when deploying the app to a different workspace.
+
+### Pages validation
+
+From this directory:
+
+```powershell
+npm run typecheck
+npx vitest run client\src\pages\pages\pages-export.test.ts
+npx eslint client\src\pages\pages\pages-export.ts client\src\pages\pages\pages-export.test.ts client\src\pages\pages\PagesPage.tsx
+```
+
+Browser acceptance: verify loading/error/empty states; select only the intended
+terms; confirm download remains disabled until domain, selection, and review are
+present; inspect the downloaded file; and complete the import/publication steps
+above with a domain owner. Verify Page citations in Ask after publishing.
+
+Implementation verification (2026-10-23): typecheck, six export tests, focused
+ESLint, production build, and `databricks apps validate --profile dario-ws` passed.
+Browser checks with controlled glossary responses verified review/selection gates,
+export Blob content, owner-field exclusion, empty/error states, and reset after
+changing the domain. The integrated browser did not expose a download event, so
+the exported Blob was checked against the preview instead. Actual Pages import,
+publication, and Genie One citations have not been verified.
+
+Deployment retried successfully on 2026-10-23 with
+`databricks apps deploy --profile dario-ws` after authentication was restored.
+Post-deploy checks confirmed RUNNING state, health `ok`, HTTP 200 on `/pages`,
+the Pages workflow in the deployed JavaScript bundle, and successful live glossary
+access (one term). Discover Pages import, publication, and citations still require
+human verification in Databricks.
+
 ## Prerequisites
 
 - Node.js v22+ and npm

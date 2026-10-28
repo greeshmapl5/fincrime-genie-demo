@@ -1,0 +1,21 @@
+# This is a Declarative Automation Bundle definition for fincrime-genie-demo.
+# The Databricks extension requires databricks.yml configuration file.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+
+bundle:
+  name: fincrime-genie-demo
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-417d24d1-5086.cloud.databricks.com
+
+  ## Optionally, there could be 'staging' or 'prod' targets here.
+  #
+  my-dev:
+    mode: development
+    default: false
+    workspace:
+       host: https://dbc-33134f32-bbb1.cloud.databricks.com

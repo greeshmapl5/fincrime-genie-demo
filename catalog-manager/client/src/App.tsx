@@ -16,6 +16,7 @@ import { Menu } from 'lucide-react';
 import { CatalogPage } from './pages/catalog/CatalogPage';
 import { AskPage } from './pages/ask/AskPage';
 import { GlossaryPage } from './pages/glossary/GlossaryPage';
+import { PagesPage } from './pages/pages/PagesPage';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
@@ -48,7 +49,23 @@ function NavLinks({ className, linkClass, onClick }: { className?: string; linkC
       <NavLink to="/glossary" className={linkClass} onClick={onClick}>
         Glossary
       </NavLink>
+      <NavLink to="/pages" className={linkClass} onClick={onClick}>
+        Pages
+      </NavLink>
     </nav>
+  );
+}
+
+function BrandLogo() {
+  const [visible, setVisible] = useState(true);
+  if (!visible) return null;
+  return (
+    <img
+      src="/capgemini-logo.png"
+      alt="Capgemini"
+      className="h-6 w-auto shrink-0 pr-4 border-r"
+      onError={() => setVisible(false)}
+    />
   );
 }
 
@@ -59,6 +76,7 @@ function Layout() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b px-4 md:px-6 py-3 flex items-center gap-4">
+        <BrandLogo />
         <h1 className="text-lg font-semibold text-foreground">catalog-manager</h1>
         {/* Desktop nav — hidden below md breakpoint */}
         <NavLinks className="hidden md:flex gap-1" linkClass={navLinkClass} />
@@ -96,6 +114,7 @@ const router = createBrowserRouter([
       { path: '/ask', element: <AskPage /> },
       { path: '/catalog', element: <CatalogPage /> },
       { path: '/glossary', element: <GlossaryPage /> },
+      { path: '/pages', element: <PagesPage /> },
     ],
   },
 ]);
@@ -106,9 +125,10 @@ export default function App() {
 
 function HomePage() {
   const items = [
-    { to: '/ask', title: 'Ask your data', text: 'Ask questions in natural language and see the SQL behind each answer.' },
+    { to: '/ask', title: 'Ask your data', text: 'Ask Genie One using published business context, with source citations and query details.' },
     { to: '/catalog', title: 'Catalog', text: 'Edit table and column descriptions and set data classification.' },
     { to: '/glossary', title: 'Glossary', text: 'Define business terms that Genie uses to interpret questions.' },
+    { to: '/pages', title: 'Discover Pages', text: 'Prepare glossary terms for reviewed import and publication in Databricks.' },
   ];
   return (
     <div className="max-w-3xl mx-auto space-y-6 mt-8">
