@@ -28,4 +28,6 @@ Evidence to collect
 - Which counterparty received the largest share of transfers
 - Whether the recipient is paid by several unrelated customers
 
-Describe what the data shows in neutral language. Do not describe a customer's purpose or intent, and avoid words such as suspicious or illicit. This is fictional demo content, not regulatory guidance.
+Tone: describe what the data shows. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme or funnel.
+
+This is fictional demo content, not regulatory guidance.

@@ -26,3 +26,5 @@ Evidence to collect
 - Counterparties receiving funds afterwards
 
 Meeting the rule means the case needs review. It does not mean wrongdoing. This is fictional demo content, not regulatory guidance.
+
+Tone: describe what the data shows. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme or funnel.

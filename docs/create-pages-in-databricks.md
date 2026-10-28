@@ -27,6 +27,9 @@ Create them in this order. The first five already exist, so only edit them if th
 | 7 | `pages/alert-status-and-case.md` | Alert status and case | **New** |
 | 8 | `pages/new-account.md` | New account | **New** |
 | 9 | `pages/high-priority-alert.md` | High-priority alert | **New** |
+| 10 | `pages/shared-counterparty.md` | Shared counterparty | **New** |
+
+All ten files now end with a standard **Tone** line. For the nine Pages that already exist, add the Tone line to the Business use section (or edit the existing tone sentence) and republish.
 
 ## 3. How each file maps to the Page form
 
@@ -62,6 +65,7 @@ Wait **10 to 15 minutes** after the last publish. Then test each Page in the gen
 | Alert status and case | What does alert status mean, and what is a case? | Open, Escalated, Closed - false positive; from the latest Lakebase decision; a case is an alert with a recorded decision |
 | New account | What is a new account? | Opened within 30 days, measured from the latest data; `account_age_days` |
 | High-priority alert | What is a high-priority alert? | Risk score 0.8 or more and status Open |
+| Shared counterparty | What is a shared counterparty? | 3 or more distinct customers over 30 days; ordinary recipients are paid by several customers; a reason to look closer, with no mention of laundering or layering. The source should be the Shared counterparty Page, not only a knowledge snippet |
 
 For each answer, check:
 - It uses the Page wording and shows a **source or citation**. Page icons and a **Genie Ontology** chip mean a fresh lookup. "Based on the conversation from earlier" or clock icons mean it reused an old chat: delete that chat and ask again with the question worded a little differently, for example "According to our glossary, what is ...?".

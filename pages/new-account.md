@@ -26,4 +26,6 @@ Evidence to collect
 - The account age and the date of the first transaction.
 - Expected monthly volume compared with inflows (see the page on activity compared with expected volume).
 
-Describe what the data shows in neutral language, and do not describe a customer's purpose or intent. This is fictional demo content, not regulatory guidance.
+Tone: describe what the data shows. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme or funnel.
+
+This is fictional demo content, not regulatory guidance.

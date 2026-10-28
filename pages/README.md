@@ -26,6 +26,9 @@ For step-by-step instructions on creating these Pages in the workspace, see `doc
 7. `alert-status-and-case.md`
 8. `new-account.md`
 9. `high-priority-alert.md`
+10. `shared-counterparty.md`
+
+Every Page ends with the same **Tone** line. Keep it identical across Pages, and update all of them together if the wording changes.
 
 ## After publishing each page
 1. Open the Genie One chat (not the Genie space) in a new chat.

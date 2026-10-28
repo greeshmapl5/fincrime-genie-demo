@@ -20,9 +20,9 @@ Entities and relationships
 Words analysts use
 - "Candidate" means a customer who meets the structuring rule (structuring_candidates).
 - "Concentration" means the share of a customer's transfers that went to one recipient.
-- "Shared counterparty" means a counterparty paid by 3 or more distinct customers (counterparty_network). Many ordinary recipients are paid by several customers, such as suppliers, landlords and utilities, so a shared counterparty is a reason to look closer, not a conclusion. Describe it neutrally and do not link it to coordination, laundering or other wrongdoing.
+- "Shared counterparty" means a counterparty paid by 3 or more distinct customers (counterparty_network). Many ordinary recipients are paid by several customers, such as suppliers, landlords and utilities, so a shared counterparty is a reason to look closer, not a conclusion. Describe it neutrally and do not link it to coordination, laundering or other wrongdoing. The full definition is on the Shared counterparty page.
 - "New account" means opened within the last 30 days.
 
-Tone for every answer about this data: describe what the data shows, use "consistent with" for patterns, never say or imply that a customer is guilty, and avoid words such as suspicious, illicit, laundering or coordinated.
+Tone for every answer about this data: describe what the data shows, and use "consistent with" for patterns. Never say or imply that a customer is guilty. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme, funnel or coordinated.
 
 All names, numbers and rules are fictional. Not regulatory guidance.
