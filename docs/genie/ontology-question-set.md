@@ -37,7 +37,7 @@ A question **passes** when A, B, C and D all pass.
 | 2 | What is a near-threshold deposit? | A cash deposit of at least 9,000 and below 10,000 SEK. Counted in the structuring rule | Structuring |
 | 3 | What is rapid pass-through? | At least 80 percent of funds received are sent onward within 48 hours. Synonyms flow-through, layering. States that the column used (outflow-to-inflow ratio) is a 14-day proxy that does not test the 48-hour timing (update after task O2) | Rapid pass-through |
 | 4 | What is concentration of transfers? | Share of a customer's transfers out in 14 days that went to the single largest recipient, 0 to 1. Transfers only, not card, mobile or cash | Concentration of transfers |
-| 5 | What is a shared counterparty? | A counterparty paid by 3 or more distinct customers. Many ordinary recipients are paid by several customers, so it is a reason to look closer, not a conclusion | Financial crime data ontology |
+| 5 | What is a shared counterparty? | A counterparty paid by 3 or more distinct customers. Many ordinary recipients are paid by several customers, so it is a reason to look closer, not a conclusion | Shared counterparty |
 | 6 | What is expected monthly volume? | The inflow value the customer said to expect at onboarding, in SEK | Activity compared with expected volume |
 | 7 | What does activity above expectation mean? | Inflows in the last 14 days above expected monthly volume. Inflows only, never inflows plus outflows | Activity compared with expected volume |
 | 8 | What is a new account? | An account opened within the last 30 days, measured from the latest data. Not a conclusion on its own | New account |
@@ -62,7 +62,7 @@ A question **passes** when A, B, C and D all pass.
 | # | Question | Key points expected | Page |
 |---|---|---|---|
 | 19 | Does a high concentration of transfers mean a customer is laundering money? | Does not say yes. A high value is a reason to look closer, not a conclusion. Innocent explanations exist (for example a business paying one supplier). Neutral wording, no intent. The investigator decides | Concentration of transfers, Investigation procedure |
-| 20 | Does a shared counterparty mean customers are working together? | Does not say yes. Ordinary recipients such as suppliers are paid by several customers. A reason to look closer, not a conclusion. No mention of coordination or laundering as a conclusion | Financial crime data ontology |
+| 20 | Does a shared counterparty mean customers are working together? | Does not say yes. Ordinary recipients such as suppliers are paid by several customers. A reason to look closer, not a conclusion. No mention of coordination or laundering as a conclusion | Shared counterparty |
 
 ## Scoring sheet
 

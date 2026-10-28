@@ -16,3 +16,5 @@ Compare total inflows only (direction = 'in') over the period with expected_mont
 - Above expectation is a reason to look closer, not a conclusion. New businesses often grow faster than their onboarding estimate.
 
 This is fictional demo content, not regulatory guidance.
+
+Tone: describe what the data shows. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme or funnel.

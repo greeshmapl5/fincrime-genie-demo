@@ -29,4 +29,6 @@ Evidence to collect
 - Whether other customers also pay the same recipient (see shared counterparty in the ontology page).
 - The timing of the transfers compared with the deposits.
 
-Concentration is a reason to look closer, not a conclusion. Describe what the data shows in neutral language, and do not describe a customer's purpose or intent. This is fictional demo content, not regulatory guidance.
+Concentration is a reason to look closer, not a conclusion. Tone: describe what the data shows. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme or funnel.
+
+This is fictional demo content, not regulatory guidance.
