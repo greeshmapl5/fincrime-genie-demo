@@ -7,20 +7,14 @@
 Build the Databricks demo for our Summit booth (December 2026) and run the project with human + Claude agent collaboration.
 
 ## Status
-- **Ask migrated to Genie One MCP:** Branch `story/E1-S11-genie-one` replaces the
-  AppKit Genie space chat with user-scoped `system.ai.genie_one_mcp` via Unity
-  Gateway. Deployed to dario-ws with `sql` and `ai-gateway` user scopes. Missing
-  user tokens fail closed; no app-SP fallback, shared clients, or conversation
-  cache. Live `/api/ask/identity` reports the signed-in user. Ask returned the
-  published Financial Crime "Concentration of transfers" Page citation and its
-  distinctive 14-day / largest-recipient / 0.94 = 94 percent definition.
-  See `docs/demo-catalog-manager.md` for evidence. Local tests: 23/23 pass;
-  typecheck, production build and apps validation pass. Focused lint has no
-  errors (three array-index-key warnings). Browser sign-in/consent remains
-  unverified; users may need to consent to the new scope. Dependency audit
-  reports 34 advisories; no blanket upgrades were made. Metadata writes still
-  run as app SP, without user-attributed change history. Earlier uncommitted
-  Pages/logo changes were preserved; no commits, push or merge performed.
+- **Ask limited to the Genie space via MCP (2026-10-29):** Branch `story/E1-S11-genie-one` now
+  uses the Genie Agent MCP `/api/2.0/mcp/genie/{space_id}` as the signed-in user, restricted to
+  the Investigations Analyst space (Genie One was tried first and replaced; it is not space-scoped
+  and Page citations were proven on it earlier). Deployed to dario-ws with scopes `sql`,
+  `dashboards.genie`, `genie`. Typecheck and 24 tests pass; the space MCP response shape was
+  checked live. **Blocked on a browser re-consent:** the deployed app gets 403 "required scopes:
+  genie" until the user re-consents. Metadata writes still run as the app SP with no per-user
+  audit. The old Beta MCP endpoint ends 2026-11-30; confirm the space-scoped one is unaffected.
 - **Acceptance testing:** See `docs/acceptance-2026-10-24.md`. Restarted stopped app
   compute successfully. Live API suite: 51 passes / 1 failure across 52 checks.
   Classification table/column set/read/remove now works on `smoke_test`.

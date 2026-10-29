@@ -13,8 +13,8 @@ Browser (business owner)
    │  SSO via Databricks Apps proxy (adds user identity + OBO token headers)
    ▼
 Databricks App "catalog-manager"  (AppKit: Express server + React/Vite UI)
-   ├── /api/ask ──► Unity Gateway: system.ai.genie_one_mcp                         [runs AS USER]
-   │                  └─► Genie Ontology (published Pages/domains) + governed data
+   ├── /api/ask ──► Genie space MCP /api/2.0/mcp/genie/{space_id}   [runs AS USER]
+   │                  └─► Investigations Analyst space only (its tables; no Pages)
    ├── server/catalog.ts ── /api/catalog/*, /api/glossary ──► SQL Statement API      [runs AS APP SP]
    │        └─► warehouse dea09e931a40e6e8 ► information_schema, tags, COMMENT, business_glossary
    └── Pages tab (browser only) ──► downloads proposed-business-pages.md
@@ -33,7 +33,7 @@ Databricks App "catalog-manager"  (AppKit: Express server + React/Vite UI)
 
 | Feature | Identity | Why it matters |
 |---|---|---|
-| Ask (Genie One) | **Signed-in user** (forwarded OAuth token; `ai-gateway` scope) | User identity is shown; underlying domain/data and MCP execution permissions apply; no app-SP fallback |
+| Ask (Genie space MCP) | **Signed-in user** (forwarded OAuth token; `genie` scope) | User identity is shown; CAN RUN on the space and data permissions apply; no app-SP fallback |
 | Catalog, classification, comments, glossary | **App service principal** `ebcda4c6-…` | The SP needs `SELECT`, `MODIFY`, `APPLY TAG` and comment rights on `fincrime.gold`. The app does **no per-user authorisation**, so anyone who can open the app can edit metadata. This is a known demo-grade gap. |
 | Pages | Nobody: a browser download only | Publishing is done by a human in Discover with their own rights |
 
@@ -41,12 +41,11 @@ Databricks App "catalog-manager"  (AppKit: Express server + React/Vite UI)
 
 **Home**: static cards linking to each capability.
 
-**Ask** (`AskPage.tsx` -> `/api/ask` -> `server/genie-one.ts`)
-- The new MCP URL is `/ai-gateway/mcp-services/system.ai.genie_one_mcp?o=<workspace-id>`.
-- `genie_ask` starts a response; `genie_poll_response` returns progress and the final answer.
-- Follow-ups reuse the conversation ID; Stop requests cancellation; New conversation resets the UI.
-- Answers render clickable source citations and Explore in Databricks. Query details and results are inspectable when returned.
-- Host and workspace ID come from `app.yaml`. The retiring `/api/2.0/mcp/genie` endpoint is not used.
+**Ask** (`AskPage.tsx` -> `/api/ask` -> `server/genie-space.ts`)
+- MCP URL is `/api/2.0/mcp/genie/<space_id>`, with the space ID taken from the app resource: Ask can only query the Investigations Analyst space.
+- `query_space_<id>` starts a response; `poll_response_<id>` returns the answer, SQL and suggested questions.
+- Follow-ups reuse the conversation ID; New conversation resets the UI. The tool is read-only and bypasses Unity Gateway.
+- Ask does not read Discover Pages; verify Pages in Databricks Genie One.
 
 **Catalog** (`CatalogPage.tsx` → `server/catalog.ts`)
 
@@ -65,17 +64,17 @@ Safety: identifiers are allow-listed (`^[A-Za-z0-9_]+$`), values are parameteris
 **Glossary** (`GlossaryPage.tsx` → `/api/glossary`)
 - Delta table `fincrime.gold.business_glossary`, created at startup with `CREATE TABLE IF NOT EXISTS`.
 - Save = delete by `lower(term)` then insert (case-insensitive upsert). Delete = `DELETE … WHERE lower(term)=…`.
-- The glossary table remains in the curated Genie space, but Ask now uses Genie One.
+- The glossary table remains in the curated Genie space, and Ask queries it through the Genie space MCP.
   Saving a row does not guarantee discovery or ontology ingestion. Publish the term
   as a Page and verify a citation to demonstrate governed business context.
 
 **Pages** (`PagesPage.tsx`, `pages-export.ts`: browser-only)
 - Select terms → enter an existing Discover domain → review the preview → confirm there is no sensitive content → download Markdown plus a Genie Code import prompt.
 - Owner fields and data rows are stripped and Markdown is escaped. There is no publishing API call: no documented public Pages CRUD API was identified.
-- In Databricks: **Discover › Pages › Create page › Genie Code › Bulk import pages** → a human reviews and publishes → **Genie One**, including Ask, can cite the Page.
+- In Databricks: **Discover › Pages › Create page › Genie Code › Bulk import pages** → a human reviews and publishes → **Genie One** (not the space-scoped Ask) can cite the Page.
 
 ## 5. Deployment model (30-second explanation)
-- `databricks.yml` retains app resources `sql-warehouse` (CAN_USE) and `genie-space` (CAN_RUN), plus `user_api_scopes: [sql, ai-gateway]`. Ask no longer uses the space resource.
+- `databricks.yml` retains app resources `sql-warehouse` (CAN_USE) and `genie-space` (CAN_RUN), plus `user_api_scopes: [sql, dashboards.genie, genie]`. Ask uses the space resource's ID.
 - `app.yaml` runs `npm run start` and maps those resources to env vars.
 - Deploy: `databricks bundle deploy -p dario-ws` then `databricks apps deploy` (or `bundle run`). Databricks builds and hosts the app and handles SSO. No servers or secrets in the repo.
 
@@ -111,7 +110,17 @@ databricks apps start catalog-manager -p dario-ws # if STOPPED
 - Browser UI flows and the Discover Pages import and publish steps have **not** been verified end-to-end.
 - Pages is an account-level Beta and may be replicated globally, so never export PII.
 
-## Genie One migration acceptance (2026-10-28)
+## Space-scoped Ask (2026-10-29)
+
+Ask was switched from Genie One to the Genie space MCP so it answers only from the
+Investigations Analyst space. Verified: typecheck and 24 tests pass; the space MCP
+returned the status-count answer and SQL in the shape the app maps. **Not verified
+end to end:** the deployed app returned 403 ("required scopes: genie") because the
+forwarded token still carried the earlier consent (`ai-gateway`, `sql`). A user
+must sign in through a browser and re-consent (or revoke the earlier consent) so the
+token includes `genie`, then retest Ask.
+
+## Genie One migration acceptance (2026-10-28, superseded for Ask)
 
 Ask now uses `system.ai.genie_one_mcp`, not the old Beta MCP or the Genie space
 Conversation API. Tested through the deployed app's `/api/ask` route with
