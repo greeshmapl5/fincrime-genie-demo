@@ -30,7 +30,15 @@ Build the resources needed to replicate and record a video of the demo. The data
 Show in **3 minutes** that everything needed to record the video is in place: the data in Lakebase, the two catalogs in Unity Catalog, the dashboard and the Genie agent working on `data_products`. Exact details to be refined later.
 
 ## Stories
-_Not yet defined. To be refined in a later session._
+| Story | Title | Status |
+|---|---|---|
+| [E1-S9](../stories/E1-S9-agent-bricks-policy-documents.md) | Policy document questions (Genie Agent) | review |
+| [E1-S10](../stories/E1-S10-discover-pages.md) | Catalog Manager, glossary, Pages export | review |
+| [E1-S11](../stories/E1-S11-genie-one-ask.md) | Ask via Genie One MCP with user identity | review |
+| [E1-S12](../stories/E1-S12-metadata-audit-and-authz.md) | Metadata audit and edit authorization | backlog |
+| [E1-S13](../stories/E1-S13-publish-pages-manually.md) | Verify manual Pages import and publish | backlog |
+
+Other E1 stories (dataset, Lakebase, catalogs, dashboard) are still to be defined.
 
 ## Success criteria
 - [ ] Dataset chosen and documented

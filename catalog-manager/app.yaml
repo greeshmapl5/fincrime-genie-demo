@@ -2,8 +2,6 @@ command: ['npm', 'run', 'start']
 env:
   - name: DATABRICKS_HOST
     value: "https://dbc-417d24d1-5086.cloud.databricks.com"
-  - name: DATABRICKS_WORKSPACE_ID
-    value: "7474649527621307"
   - name: DATABRICKS_WAREHOUSE_ID
     valueFrom: sql-warehouse
   - name: DATABRICKS_GENIE_SPACE_ID

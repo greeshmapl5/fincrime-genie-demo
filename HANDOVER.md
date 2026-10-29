@@ -52,10 +52,10 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 | E3 | Declarative Automation Bundles for new workspaces | Low |
 
 ## Next 3 steps
-1. Have a domain owner review exported glossary terms and import/publish them in Discover Pages.
-2. Human-test the new Ask UI, sign-in/consent and access with a second user;
-   API-level published-Page citation proof is now recorded.
-3. Add user-attributed metadata audit and edit authorization in a separate story.
+1. E1-S13: a domain owner imports and publishes an exported term in Discover Pages.
+2. E1-S11: human-test the Ask UI, sign-in/consent and a second user.
+3. E1-S12: user-attributed metadata audit and edit authorization.
+(Stories are in `backlog/stories/`; split the S10/S11 commit before the PR.)
 
 ## Open actions / blockers
 | # | Item | Owner | Status |

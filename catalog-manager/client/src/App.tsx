@@ -125,7 +125,7 @@ export default function App() {
 
 function HomePage() {
   const items = [
-    { to: '/ask', title: 'Ask your data', text: 'Ask Genie One using published business context, with source citations and query details.' },
+    { to: '/ask', title: 'Ask your data', text: 'Ask the Investigations Analyst Genie space, with the SQL behind each answer.' },
     { to: '/catalog', title: 'Catalog', text: 'Edit table and column descriptions and set data classification.' },
     { to: '/glossary', title: 'Glossary', text: 'Define business terms that Genie uses to interpret questions.' },
     { to: '/pages', title: 'Discover Pages', text: 'Prepare glossary terms for reviewed import and publication in Databricks.' },

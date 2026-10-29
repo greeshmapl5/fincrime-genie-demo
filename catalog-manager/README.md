@@ -6,24 +6,25 @@ A Databricks App powered by [AppKit](https://developers.databricks.com/docs/appk
 - **Analytics** -- SQL query execution against Databricks SQL Warehouses
 - **Server** -- Express HTTP server with static file serving and Vite dev mode
 
-## Ask: Genie One MCP
+## Ask: Genie space MCP
 
-Ask now calls `system.ai.genie_one_mcp` through Unity Gateway, not the
-Investigations Analyst space Conversation API or the retiring Beta MCP endpoint.
-The backend creates a separate MCP client per request using only the Apps proxy's
-`x-forwarded-access-token` and requires `x-forwarded-user`. There is no app
-service-principal fallback or server-side conversation cache.
+Ask calls the Genie Agent MCP endpoint `/api/2.0/mcp/genie/{space_id}`, scoped to
+the Investigations Analyst space only. The space ID comes from the app's
+`genie-space` resource (`DATABRICKS_GENIE_SPACE_ID`); callers cannot pick another
+space. It does not read Discover Pages (use Genie One for that). The backend creates
+one MCP client per request from the Apps proxy's `x-forwarded-access-token` and
+requires `x-forwarded-user`. There is no service-principal fallback or conversation cache.
 
-- Set `DATABRICKS_HOST` and numeric `DATABRICKS_WORKSPACE_ID` in `app.yaml`.
-- Declare `user_api_scopes: [sql, ai-gateway]` in the bundle. Existing users may
-  need to authorize the new scope when reopening the app.
-- Users need access to execute the MCP service and underlying domains/data.
-  A grant to the app service principal does not replace these user permissions.
-- `GET /api/ask/identity` displays the proxy-authenticated caller, never the token.
-- `POST /api/ask` allows only ask, poll, cancel and query-result actions.
-  Follow-ups reuse the conversation ID; polling shows progress every three seconds.
-- Answers retain clickable Page citations, an Explore in Databricks link, an
-  AI disclaimer, and expandable query metadata/results when Genie returns them.
+- Declare `user_api_scopes: [sql, dashboards.genie, genie]`; the MCP endpoint
+  requires the `genie` scope. Users must re-consent in a browser after the scopes
+  change, otherwise the forwarded token lacks `genie` and Ask returns 403.
+- Users need CAN RUN on the Genie space and access to its data.
+- `GET /api/ask/identity` displays the caller, never the token.
+- `POST /api/ask` allows only ask and poll. Follow-ups reuse the conversation ID.
+- The tool is read-only and returns text, SQL and suggested questions.
+- The endpoint is not governed by Unity Gateway (no grants, policies or tracing).
+  The Beta endpoint without a space ID is deprecated (end of life 2026-11-30); the
+  space-scoped endpoint is not named in that notice, but confirm before the Summit.
 - Standalone local development deliberately rejects Ask without trusted caller
   headers. Use a deployed Apps proxy for real user-identity validation; never
   expose a local server that trusts arbitrary forwarded headers to untrusted users.

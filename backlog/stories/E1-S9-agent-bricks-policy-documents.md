@@ -21,6 +21,8 @@ The fictional source document, Knowledge Assistant setup instructions, and evalu
 - [x] Given the evaluation cases in the demo README, when neutral-language and out-of-scope questions are asked, then both expected behaviors pass. (Late request answered neutrally with section citation; lost-passport question declined as out of scope.)
 - [ ] Optional: a supervisor answers one question using both Genie data and policy knowledge. (Not tested; the same space now holds both data tables and `policy_docs`.)
 
+- [ ] Policy answers show one `Source:` line per section (failed in the 2026-10-24 live run; tracked in E1-S10).
+
 ## Technical notes
 Policy text is loaded as 12 section rows into `fincrime.gold.policy_docs` by `src/03_policy_docs.py`; `src/04_genie_policy_space.py` adds the table, policy rules and 3 benchmarks to the space. Citations are section level, not page level. Data questions still work (regression: alerts by status). Not pushed or deployed through a bundle; the workspace changes were made directly.
 

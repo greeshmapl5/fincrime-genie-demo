@@ -228,9 +228,9 @@ export function PagesPage() {
             their owner.
           </p>
           <p>
-            Catalog Manager&apos;s Ask tab uses Genie One MCP and can retrieve published Pages you can access.
-            This export workflow does not publish them. Editing a glossary term later requires a separate
-            review and update of its Page.
+            Catalog Manager&apos;s Ask tab is limited to the Investigations Analyst Genie space and does not read
+            Pages; verify Pages in Databricks Genie One. This export workflow does not publish them. Editing a
+            glossary term later requires a separate review and update of its Page.
           </p>
         </CardContent>
       </Card>
