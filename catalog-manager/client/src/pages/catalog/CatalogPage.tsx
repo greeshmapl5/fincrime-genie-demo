@@ -144,7 +144,6 @@ export function CatalogPage() {
   };
 
   const current = tables.find((t) => t.table_name === selected);
-  const readOnly = current?.table_type === 'VIEW';
   const previewCols = preview[0] ? Object.keys(preview[0]) : [];
 
   return (
@@ -178,11 +177,6 @@ export function CatalogPage() {
             ✓ {notice}
           </p>
         )}
-        {readOnly && (
-          <p className="text-sm text-muted-foreground">
-            {selected} is a view. Tags and descriptions can only be edited on tables, so editing is disabled.
-          </p>
-        )}
         {!selected && <p className="text-muted-foreground">Select a table to view and edit its metadata.</p>}
         {selected && (
           <>
@@ -193,7 +187,6 @@ export function CatalogPage() {
               <CardContent className="space-y-3">
                 <CommentEditor
                   value={current?.comment ?? ''}
-                  disabled={readOnly}
                   onSave={(v) => saveComment(selected, v)}
                 />
                 <div className="flex items-center gap-2 text-sm">
@@ -201,7 +194,6 @@ export function CatalogPage() {
                   <ClassificationSelect
                     value={current?.classification ?? ''}
                     levels={levels}
-                    disabled={readOnly}
                     onChange={(v) => saveClassification(selected, v)}
                   />
                 </div>
@@ -222,12 +214,10 @@ export function CatalogPage() {
                     <ClassificationSelect
                       value={c.classification ?? ''}
                       levels={levels}
-                      disabled={readOnly}
                       onChange={(v) => saveClassification(selected, v, c.column_name!)}
                     />
                     <CommentEditor
                       value={c.comment ?? ''}
-                      disabled={readOnly}
                       onSave={(v) => saveComment(selected, v, c.column_name!)}
                     />
                   </div>
