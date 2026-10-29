@@ -18,7 +18,12 @@ How it is measured in the data
 
 How to read it
 - Many ordinary recipients are paid by several customers, such as suppliers, landlords and pooled payment services.
-- A shared counterparty is a reason to look closer. It is not a conclusion, and it does not show that customers are connected to each other.
+- A shared counterparty is a reason to look closer. It is not a conclusion.
+
+What this does not show
+- It does not show that the paying customers are connected to each other.
+- It does not show why any customer made a transfer.
+- This Page does not list other risk factors. Do not add a section on what "might be suspicious" or any other list of factors that is not on this Page.
 
 Evidence to collect
 - Who the counterparty is, and its type.
@@ -27,6 +32,6 @@ Evidence to collect
 - How much of each customer's transfers goes to this counterparty (see concentration of transfers).
 - The timing of the transfers compared with the customers' deposits.
 
-Tone: describe what the data shows. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme or funnel.
-
 This is fictional demo content, not regulatory guidance.
+
+Tone: describe what the data shows. Say "a pattern consistent with ..." and do not call a pattern a red flag. Do not describe a customer's intent or purpose. Avoid words and phrases such as deliberate, deliberately, to avoid detection, to evade, red flag, suspicious, suspicious activity, illicit, laundering, layering scheme or funnel. Do not add information, examples, risk factors or queries that are not on this Page.

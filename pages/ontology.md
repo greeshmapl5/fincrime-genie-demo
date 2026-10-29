@@ -14,7 +14,7 @@ The data describes customers, their transactions, the counterparties that receiv
 Entities and relationships
 - A **customer** (customer_360) has many **transactions**.
 - A **transaction** has one **counterparty**. Cash uses the counterparty CASH. Card and mobile payments go to merchants and utilities. Transfers go to individuals or businesses.
-- An **alert** is raised on one customer and names a **typology**: structuring, rapid pass-through, mule account or unusual volume.
+- An **alert** is raised on one customer and names a **typology** (the alert category): structuring, rapid pass-through, mule account or unusual volume. See the Typology page.
 - A **case** is an alert with a recorded **decision**: Escalated or Closed - false positive. Alerts without a decision are Open. Decisions are recorded in Lakebase and read through the alerts view.
 
 Words analysts use
@@ -23,6 +23,6 @@ Words analysts use
 - "Shared counterparty" means a counterparty paid by 3 or more distinct customers (counterparty_network). Many ordinary recipients are paid by several customers, such as suppliers, landlords and utilities, so a shared counterparty is a reason to look closer, not a conclusion. Describe it neutrally and do not link it to coordination, laundering or other wrongdoing. The full definition is on the Shared counterparty page.
 - "New account" means opened within the last 30 days.
 
-Tone for every answer about this data: describe what the data shows, and use "consistent with" for patterns. Never say or imply that a customer is guilty. Do not describe a customer's intent or purpose, and do not call a pattern a red flag. Avoid words such as deliberate, red flag, suspicious, illicit, laundering, layering scheme, funnel or coordinated.
+Tone: describe what the data shows. Say "a pattern consistent with ..." and do not call a pattern a red flag. Never say or imply that a customer is guilty. Do not describe a customer's intent or purpose. Avoid words and phrases such as deliberate, deliberately, to avoid detection, to evade, red flag, suspicious, suspicious activity, illicit, laundering, layering scheme, funnel or coordinated. Do not add information, examples, risk factors or queries that are not on this Page.
 
 All names, numbers and rules are fictional. Not regulatory guidance.
