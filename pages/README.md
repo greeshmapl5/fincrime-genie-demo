@@ -27,8 +27,12 @@ For step-by-step instructions on creating these Pages in the workspace, see `doc
 8. `new-account.md`
 9. `high-priority-alert.md`
 10. `shared-counterparty.md`
+11. `near-threshold-deposit.md`
+12. `typology.md`
 
 Every Page ends with the same **Tone** line. Keep it identical across Pages, and update all of them together if the wording changes.
+
+Pages where Genie One tends to add its own wording (structuring, typology, shared counterparty) also carry an **approved wording** section. Keep it near the top of Business use.
 
 ## After publishing each page
 1. Open the Genie One chat (not the Genie space) in a new chat.

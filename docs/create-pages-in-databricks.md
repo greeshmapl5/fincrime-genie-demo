@@ -27,9 +27,15 @@ Create them in this order. The first five already exist, so only edit them if th
 | 7 | `pages/alert-status-and-case.md` | Alert status and case | **New** |
 | 8 | `pages/new-account.md` | New account | **New** |
 | 9 | `pages/high-priority-alert.md` | High-priority alert | **New** |
-| 10 | `pages/shared-counterparty.md` | Shared counterparty | **New** |
+| 10 | `pages/shared-counterparty.md` | Shared counterparty | Created, **updated** |
+| 11 | `pages/near-threshold-deposit.md` | Near-threshold deposit | **New** |
+| 12 | `pages/typology.md` | Typology | **New** |
 
-All ten files now end with a standard **Tone** line. For the nine Pages that already exist, add the Tone line to the Business use section (or edit the existing tone sentence) and republish.
+**Update of 29 October 2026.** Testing showed Genie One adding intent and suspicion wording ("to avoid detection", "deliberately", "suspicious activity"), example queries and risk factors that are on no Page. All twelve files now end with a stronger, identical **Tone** line, and the Pages for structuring, typology, near-threshold deposit, activity versus expected volume and shared counterparty also carry approved wording or "do not add" statements. For the Pages that already exist, copy the changed text from the files into the workspace Pages and republish. In particular:
+- **Structuring:** the synonyms "smurfing" and "threshold avoidance" are removed, the Description is new, and an "approved wording" section is added.
+- **Activity compared with expected volume:** now states that the comparison sums inflow amounts over 14 days from the latest data, and that no example queries should be added.
+- **Shared counterparty:** now has a "What this does not show" section.
+- **All Pages:** replace the old tone sentence with the new Tone line.
 
 ## 3. How each file maps to the Page form
 
@@ -66,6 +72,8 @@ Wait **10 to 15 minutes** after the last publish. Then test each Page in the gen
 | New account | What is a new account? | Opened within 30 days, measured from the latest data; `account_age_days` |
 | High-priority alert | What is a high-priority alert? | Risk score 0.8 or more and status Open |
 | Shared counterparty | What is a shared counterparty? | 3 or more distinct customers over 30 days; ordinary recipients are paid by several customers; a reason to look closer, with no mention of laundering or layering. The source should be the Shared counterparty Page, not only a knowledge snippet |
+| Near-threshold deposit | What is a near-threshold deposit? | A cash deposit of at least 9,000 and below 10,000 SEK. No mention of intent ("deliberately", "to avoid") |
+| Typology | What is a typology? | The category of pattern an alert was raised for; the four in the data; says mule account and unusual volume have no definition here; no "suspicious activity pattern" |
 
 For each answer, check:
 - It uses the Page wording and shows a **source or citation**. Page icons and a **Genie Ontology** chip mean a fresh lookup. "Based on the conversation from earlier" or clock icons mean it reused an old chat: delete that chat and ask again with the question worded a little differently, for example "According to our glossary, what is ...?".
