@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@databricks/appkit-ui/react';
 
 type Row = Record<string, string | null>;
@@ -13,20 +13,29 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-function CommentEditor({ value, onSave }: { value: string; onSave: (v: string) => Promise<void> }) {
+function CommentEditor({
+  value,
+  onSave,
+  disabled,
+}: {
+  value: string;
+  onSave: (v: string) => Promise<boolean>;
+  disabled?: boolean;
+}) {
   const [text, setText] = useState(value);
   const [saving, setSaving] = useState(false);
   useEffect(() => setText(value), [value]);
   return (
     <div className="flex gap-2">
       <input
-        className="border rounded px-2 py-1 text-sm flex-1 bg-background"
+        className="border rounded px-2 py-1 text-sm flex-1 bg-background disabled:opacity-60"
         value={text}
+        disabled={disabled}
         onChange={(e) => setText(e.target.value)}
       />
       <Button
         size="sm"
-        disabled={saving || text === value}
+        disabled={disabled || saving || text === value}
         onClick={async () => {
           setSaving(true);
           try {
@@ -36,7 +45,7 @@ function CommentEditor({ value, onSave }: { value: string; onSave: (v: string) =
           }
         }}
       >
-        Save
+        {saving ? 'Saving…' : 'Save'}
       </Button>
     </div>
   );
@@ -46,15 +55,18 @@ function ClassificationSelect({
   value,
   levels,
   onChange,
+  disabled,
 }: {
   value: string;
   levels: string[];
-  onChange: (v: string) => Promise<void>;
+  onChange: (v: string) => Promise<boolean>;
+  disabled?: boolean;
 }) {
   return (
     <select
-      className="border rounded px-2 py-1 text-sm bg-background"
+      className="border rounded px-2 py-1 text-sm bg-background disabled:opacity-60"
       value={value}
+      disabled={disabled}
       onChange={(e) => void onChange(e.target.value)}
     >
       <option value="">Unclassified</option>
@@ -74,7 +86,14 @@ export function CatalogPage() {
   const [columns, setColumns] = useState<Row[]>([]);
   const [preview, setPreview] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  const flash = (msg: string) => {
+    setNotice(msg);
+    clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), 3000);
+  };
   const loadTables = () => api<Row[]>('/api/catalog/tables').then(setTables).catch((e) => setError(e.message));
   useEffect(() => {
     void loadTables();
@@ -93,30 +112,39 @@ export function CatalogPage() {
   };
 
   const saveClassification = async (table: string, level: string, column?: string) => {
+    setError(null);
     try {
       await api(`/api/catalog/tables/${table}/classification`, {
         method: 'PUT',
         body: JSON.stringify({ column, level }),
       });
       await Promise.all([loadTables(), select(table)]);
+      flash(`Saved classification${column ? ` for ${column}` : ''}: ${level || 'Unclassified'}`);
+      return true;
     } catch (e) {
       setError((e as Error).message);
+      return false;
     }
   };
 
   const saveComment = async (table: string, comment: string, column?: string) => {
+    setError(null);
     try {
       await api(`/api/catalog/tables/${table}/comment`, {
         method: 'PUT',
         body: JSON.stringify({ column, comment }),
       });
       await Promise.all([loadTables(), select(table)]);
+      flash(`Saved description${column ? ` for ${column}` : ''}`);
+      return true;
     } catch (e) {
       setError((e as Error).message);
+      return false;
     }
   };
 
   const current = tables.find((t) => t.table_name === selected);
+  const readOnly = current?.table_type === 'VIEW';
   const previewCols = preview[0] ? Object.keys(preview[0]) : [];
 
   return (
@@ -145,6 +173,16 @@ export function CatalogPage() {
 
       <div className="space-y-4">
         {error && <p className="text-sm text-red-600">{error}</p>}
+        {notice && (
+          <p role="status" className="text-sm text-green-700">
+            ✓ {notice}
+          </p>
+        )}
+        {readOnly && (
+          <p className="text-sm text-muted-foreground">
+            {selected} is a view. Tags and descriptions can only be edited on tables, so editing is disabled.
+          </p>
+        )}
         {!selected && <p className="text-muted-foreground">Select a table to view and edit its metadata.</p>}
         {selected && (
           <>
@@ -155,6 +193,7 @@ export function CatalogPage() {
               <CardContent className="space-y-3">
                 <CommentEditor
                   value={current?.comment ?? ''}
+                  disabled={readOnly}
                   onSave={(v) => saveComment(selected, v)}
                 />
                 <div className="flex items-center gap-2 text-sm">
@@ -162,6 +201,7 @@ export function CatalogPage() {
                   <ClassificationSelect
                     value={current?.classification ?? ''}
                     levels={levels}
+                    disabled={readOnly}
                     onChange={(v) => saveClassification(selected, v)}
                   />
                 </div>
@@ -182,10 +222,12 @@ export function CatalogPage() {
                     <ClassificationSelect
                       value={c.classification ?? ''}
                       levels={levels}
+                      disabled={readOnly}
                       onChange={(v) => saveClassification(selected, v, c.column_name!)}
                     />
                     <CommentEditor
                       value={c.comment ?? ''}
+                      disabled={readOnly}
                       onSave={(v) => saveComment(selected, v, c.column_name!)}
                     />
                   </div>

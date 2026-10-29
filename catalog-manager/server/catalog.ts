@@ -29,6 +29,19 @@ async function run(statement: string, parameters: Param[] = []): Promise<Record<
   );
 }
 
+const VIEW_MESSAGE = 'Views are read-only here: tags and comments can only be edited on tables.';
+
+async function isView(table: string): Promise<boolean> {
+  const rows = await run(
+    `SELECT table_type FROM ${CATALOG}.information_schema.tables WHERE table_schema = :schema AND table_name = :table`,
+    [
+      { name: 'schema', value: SCHEMA },
+      { name: 'table', value: table },
+    ],
+  );
+  return rows[0]?.table_type === 'VIEW';
+}
+
 const quoteComment = (s: string) => `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
 export async function setupCatalogRoutes(app: Application) {
@@ -42,7 +55,7 @@ export async function setupCatalogRoutes(app: Application) {
   app.get('/api/catalog/tables', async (_req, res) => {
     try {
       const rows = await run(
-        `SELECT t.table_name, t.comment, g.tag_value AS classification
+        `SELECT t.table_name, t.table_type, t.comment, g.tag_value AS classification
          FROM ${CATALOG}.information_schema.tables t
          LEFT JOIN ${CATALOG}.information_schema.table_tags g
            ON g.schema_name = t.table_schema AND g.table_name = t.table_name AND g.tag_name = :tag
@@ -91,6 +104,7 @@ export async function setupCatalogRoutes(app: Application) {
       if (!IDENT.test(table) || (column && !IDENT.test(column)) || (level && !LEVELS.includes(level))) {
         return void res.status(400).json({ error: 'Invalid request' });
       }
+      if (await isView(table)) return void res.status(400).json({ error: VIEW_MESSAGE });
       const target = column
         ? `ALTER TABLE ${CATALOG}.${SCHEMA}.${table} ALTER COLUMN ${column}`
         : `ALTER TABLE ${CATALOG}.${SCHEMA}.${table}`;
@@ -119,6 +133,7 @@ export async function setupCatalogRoutes(app: Application) {
       if (!IDENT.test(table) || (column && !IDENT.test(column)) || typeof comment !== 'string') {
         return void res.status(400).json({ error: 'Invalid request' });
       }
+      if (await isView(table)) return void res.status(400).json({ error: VIEW_MESSAGE });
       const target = column
         ? `COLUMN ${CATALOG}.${SCHEMA}.${table}.${column}`
         : `TABLE ${CATALOG}.${SCHEMA}.${table}`;
