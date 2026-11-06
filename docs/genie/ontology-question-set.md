@@ -115,7 +115,7 @@ After two people score the same run, compare their Pass column. Aim for the same
 | Run | Date | Passed | Notes |
 |---|---|---|---|
 | 1 | 28 Oct 2026 | 13 of 20 on the developer's sheet (15 of 20 when questions 5 and 8 are scored on substance) | Failures: 1, 2, 12, 18, 20. Causes: model's background knowledge on structuring, typology and shared counterparty; invented example query; scoring too strict |
-| 2 | | | |
+| 2 | 6 Nov 2026 | 20 of 22 answers clean (one run each, provisional) | Tested through the app's Ask, 22 answers screenshotted by the developer. Fixed since run 1: structuring now neutral ("internal review threshold"), shared counterparty neutral, laundering question handled well. Failures: Expected monthly volume (unrequested segment table, Low-tier medians mislabelled as segment medians); Activity above expectation (added examples not on the Page: one-time large receipts, business expansion or new contracts). Display bug: markdown tables show as raw pipes (alert status, expected monthly volume). Answers now cite Page titles, so the route has changed; confirm how. |
 
 ## Notes
 
@@ -123,3 +123,4 @@ After two people score the same run, compare their Pass column. Aim for the same
 - Must-have points come from the Page texts in `pages/`. If a Page changes, update this file.
 - Questions 19 and 20 check tone, so score tone strictly.
 - Record the answers (screenshots or text) for the failures, so they can be fixed.
+- Run 2 used one run per question, so a pass is provisional until a second run. Avoid the two failing expected-volume questions in the live demo.
