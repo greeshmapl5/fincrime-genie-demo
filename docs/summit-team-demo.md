@@ -64,7 +64,7 @@ flowchart TD
     C -->|"App service principal via Statement Execution API"| W["Configured SQL warehouse"]
     C -->|"App service principal: tag-policies REST API"| TP["Account governed tag policies"]
     W --> M["Unity Catalog metadata: information_schema, comments, tags"]
-    W --> T["fincrime.data_products tables/views; glossary in fincrime.gold"]
+    W --> T["fincrime.data_products tables/views, including business_glossary"]
     UI --> AC["Access API: requests and approvals"]
     P -. "Forwarded signed-in user token" .-> AC
     AC -->|"Signed-in user: GRANT / REVOKE / SHOW GRANTS"| W
@@ -114,8 +114,9 @@ before the app runs. The app does not run those notebooks when a user opens it.
   `demo_sandbox`. This is the schema Catalog shows.
 - [Policy preparation](../src/03_policy_docs.py): fictional policy sections in
   `fincrime.gold.policy_docs`, not a live PDF retrieval service.
-- [Glossary-space setup](../src/05_genie_glossary_space.py): separately adds the
-  glossary table and lookup instructions to a curated Genie space. This is not
+- [Glossary-space setup](../src/05_genie_glossary_space.py): separately points a
+  curated Genie space at the glossary table (adding it, or moving it from `gold`)
+  and adds lookup instructions; `--dry-run` writes a preview first. This is not
   the current Ask request path or an automatic Genie One publication mechanism.
 
 Lakebase is part of the wider demo architecture for investigator decisions.
@@ -296,7 +297,7 @@ clearly temporary rehearsal term that does not overwrite a real term.
 > a Discover Page or automatically changing Genie One."
 
 **Behind the scenes:** `/api/glossary` reads/writes
-`fincrime.gold.business_glossary`. Save replaces a case-insensitive term match
+`fincrime.data_products.business_glossary`. Save replaces a case-insensitive term match
 using delete then insert. The row contains definition, related asset, owner and
 updated timestamp; it is not an immutable versioned business audit record.
 Related table/column values are text references, not verified UC lineage links.

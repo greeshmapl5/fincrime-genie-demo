@@ -56,7 +56,7 @@ const request = (over: Record<string, string | null> = {}) => {
   const row: Record<string, string | null> = {
     id: ID,
     table_name: 'fincrime.data_products.accounts',
-    requester: 'ana@example.com',
+    requester: 'bob@example.com',
     grantee: 'daiwt2026',
     grantee_type: 'group',
     privilege: 'SELECT',
@@ -84,7 +84,6 @@ const world = {
   tableExists: true,
   duplicate: false,
   setupFails: false,
-  groupsFail: false,
   request: null as (string | null)[] | null,
   mine: [] as (string | null)[][],
   pending: [] as (string | null)[][],
@@ -106,17 +105,15 @@ function respond(s: string) {
   }
   if (s.startsWith('SHOW GRANTS ON TABLE')) return succeeded(GRANT_COLS, world.grants);
   if (s.startsWith('SHOW GROUPS')) {
-    return world.groupsFail
-      ? failed('PERMISSION_DENIED')
-      : succeeded(
-          ['name', 'directGroup'],
-          [
-            ['daiwt2026', ''],
-            ['admins', ''],
-            ['users', ''],
-            ['capgemini-gen-ai', ''],
-          ]
-        );
+    return succeeded(
+      ['name', 'directGroup'],
+      [
+        ['daiwt2026', ''],
+        ['admins', ''],
+        ['users', ''],
+        ['capgemini-gen-ai', ''],
+      ]
+    );
   }
   if (s.startsWith('SELECT * FROM'))
     return world.reader ? succeeded() : failed('PERMISSION_DENIED: does not have SELECT');
@@ -144,6 +141,7 @@ beforeEach(() => {
   vi.stubEnv('CATALOG_NAME', undefined);
   vi.stubEnv('SCHEMA_NAME', undefined);
   vi.stubEnv('ACCESS_SCHEMA_NAME', undefined);
+  vi.stubEnv('ACCESS_GROUPS', 'daiwt2026,capgemini-gen-ai');
 });
 
 afterEach(() => {
@@ -250,6 +248,9 @@ describe('requests', () => {
   test.each([
     ['a principal with a backtick', 'accounts', { group: 'x` TO `y', reason: 'r' }],
     ['a workspace-local group', 'accounts', { group: 'users', reason: 'r' }],
+    ['a group that is not listed', 'accounts', { group: 'other-team', reason: 'r' }],
+    ['account users unless listed', 'accounts', { group: 'account users', reason: 'r' }],
+    ["another person's email as the group", 'accounts', { group: 'bob@example.com', reason: 'r' }],
     ['a missing reason', 'accounts', { group: 'daiwt2026' }],
     ['a long reason', 'accounts', { reason: 'x'.repeat(501) }],
     ['a reason that is not text', 'accounts', { reason: 42 }],
@@ -261,6 +262,26 @@ describe('requests', () => {
       ).toBe(400);
     });
     expect(find('INSERT')).toBeUndefined();
+  });
+
+  test('uses the configured group list instead of listing account groups', async () => {
+    vi.stubEnv('ACCESS_GROUPS', ' fincrime_analysts, users ,fincrime_analysts,account users');
+    await withApp(async (base) => {
+      expect(await (await call(base, '/api/catalog/access/groups')).json()).toEqual({
+        groups: ['fincrime_analysts', 'account users'],
+      });
+      const listed = await call(base, '/api/catalog/tables/accounts/access/requests', {
+        body: { group: 'fincrime_analysts', reason: 'r' },
+      });
+      expect(listed.status).toBe(201);
+      const unlisted = await call(base, '/api/catalog/tables/accounts/access/requests', {
+        body: { group: 'daiwt2026', reason: 'r' },
+      });
+      expect(unlisted.status).toBe(400);
+      expect((await json(unlisted)).error).toContain('Allowed groups: fincrime_analysts, account users');
+    });
+    expect(find('SHOW GROUPS')).toBeUndefined();
+    expect(sdk.calls.filter((c) => c.statement.startsWith('INSERT'))).toHaveLength(1);
   });
 
   test('accepts only JSON writes', async () => {
@@ -307,10 +328,10 @@ describe('requests', () => {
   });
 
   test('only the requester can cancel', async () => {
-    world.request = request({ requester: 'bob@example.com' });
+    world.request = request();
     await withApp(async (base) => {
       expect((await call(base, `/api/catalog/access/requests/${ID}/cancel`, { body: {} })).status).toBe(403);
-      world.request = request();
+      world.request = request({ requester: 'ana@example.com' });
       expect((await call(base, `/api/catalog/access/requests/${ID}/cancel`, { body: {} })).status).toBe(200);
     });
     const updates = sdk.calls.filter((c) => c.statement.startsWith('UPDATE'));
@@ -369,7 +390,7 @@ describe('access summary', () => {
   });
 
   test('hides approver data from other users', async () => {
-    world.mine = [request({ grantee: 'ana@example.com', grantee_type: 'user' })];
+    world.mine = [request({ requester: 'ana@example.com', grantee: 'ana@example.com', grantee_type: 'user' })];
     await withApp(async (base) => {
       const body = await json(await call(base, '/api/catalog/tables/accounts/access'));
       expect(body).toMatchObject({ canManage: false, hasAccess: false, pending: [], grants: [] });
@@ -391,26 +412,73 @@ describe('access summary', () => {
     expect(sdk.calls.filter((c) => c.statement.includes('count(*)'))).toHaveLength(1);
   });
 
-  test('suggests account groups with account users first', async () => {
+  test('offers only the configured groups without querying Unity Catalog', async () => {
     await withApp(async (base) => {
       expect(await (await call(base, '/api/catalog/access/groups')).json()).toEqual({
-        groups: ['account users', 'capgemini-gen-ai', 'daiwt2026'],
+        groups: ['daiwt2026', 'capgemini-gen-ai'],
       });
     });
+    expect(sdk.calls).toEqual([]);
   });
+});
 
-  test('falls back to account users when groups cannot be listed', async () => {
-    world.groupsFail = true;
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    try {
+describe('empty allowlist', () => {
+  test.each([undefined, '', ' \t ', ', ,', 'users,admins,`invalid`'])(
+    'rejects all group requests, approvals and direct grants with ACCESS_GROUPS=%j',
+    async (configured) => {
+      vi.stubEnv('ACCESS_GROUPS', configured);
       await withApp(async (base) => {
-        expect(await (await call(base, '/api/catalog/access/groups')).json()).toEqual({ groups: ['account users'] });
+        expect(await (await call(base, '/api/catalog/access/groups')).json()).toEqual({ groups: [] });
+        for (const group of ['daiwt2026', 'account users']) {
+          const submitted = await call(base, '/api/catalog/tables/accounts/access/requests', {
+            body: { group, reason: 'r' },
+          });
+          expect(submitted.status).toBe(400);
+          expect((await json(submitted)).error).toContain('Allowed groups: none');
+
+          world.request = request({ grantee: group });
+          expect((await call(base, `/api/catalog/access/requests/${ID}/approve`, { body: {} })).status).toBe(400);
+
+          world.request = request({ grantee: 'bob@example.com', grantee_type: 'user' });
+          expect(
+            (await call(base, `/api/catalog/access/requests/${ID}/approve`, { body: { grantee: group } })).status
+          ).toBe(400);
+          expect(
+            (await call(base, '/api/catalog/tables/accounts/access/grants', { body: { principal: group } })).status
+          ).toBe(400);
+        }
       });
-      expect(warn).toHaveBeenCalledOnce();
-    } finally {
-      warn.mockRestore();
+      expect(find('SHOW GROUPS')).toBeUndefined();
+      expect(find('INSERT')).toBeUndefined();
+      expect(find('UPDATE')).toBeUndefined();
+      expect(find('GRANT')).toBeUndefined();
     }
-  });
+  );
+
+  test.each([undefined, ''])(
+    'preserves personal requests and another user approving with ACCESS_GROUPS=%j',
+    async (configured) => {
+      vi.stubEnv('ACCESS_GROUPS', configured);
+      await withApp(async (base) => {
+        expect(
+          (await call(base, '/api/catalog/tables/accounts/access/requests', { body: { reason: 'r' } })).status
+        ).toBe(201);
+        world.request = request({ grantee: 'bob@example.com', grantee_type: 'user' });
+        expect((await call(base, `/api/catalog/access/requests/${ID}/approve`, { body: {} })).status).toBe(200);
+      });
+      expect(values(find('INSERT'))).toMatchObject({ grantee: 'ana@example.com', type: 'user' });
+      expect(values(find('UPDATE'))).toMatchObject({
+        status: 'approved',
+        by: 'ana@example.com',
+        grantee: 'bob@example.com',
+      });
+      expect(ran('user:tok-ana')).toEqual([
+        'GRANT USE SCHEMA ON SCHEMA fincrime.data_products TO `bob@example.com`',
+        'GRANT SELECT ON TABLE fincrime.data_products.accounts TO `bob@example.com`',
+      ]);
+      expect(find('SHOW GROUPS')).toBeUndefined();
+    }
+  );
 });
 
 describe('decisions', () => {
@@ -448,6 +516,37 @@ describe('decisions', () => {
       'GRANT SELECT ON TABLE fincrime.data_products.accounts TO `capgemini-gen-ai`'
     );
     expect(values(find('UPDATE'))).toMatchObject({ grantee: 'capgemini-gen-ai', type: 'group' });
+  });
+
+  test.each(['ana@example.com', 'ANA@example.com'])(
+    'nobody approves their own request (%s), even to another listed group',
+    async (requester) => {
+      world.request = request({ requester });
+      await withApp(async (base) => {
+        for (const body of [{}, { grantee: 'capgemini-gen-ai' }]) {
+          const res = await call(base, `/api/catalog/access/requests/${ID}/approve`, { body });
+          expect(res.status).toBe(403);
+          expect((await json(res)).error).toContain('own request');
+        }
+      });
+      expect(find('GRANT')).toBeUndefined();
+      expect(find('UPDATE')).toBeUndefined();
+    }
+  );
+
+  test.each([
+    ['to themselves', 'ana@example.com', 403],
+    ['to a group that is not listed', 'other-team', 400],
+    ['to account users unless listed', 'account users', 400],
+  ])('an approver cannot redirect a grant %s', async (_label, to, status) => {
+    world.request = request();
+    await withApp(async (base) => {
+      expect((await call(base, `/api/catalog/access/requests/${ID}/approve`, { body: { grantee: to } })).status).toBe(
+        status
+      );
+    });
+    expect(find('GRANT')).toBeUndefined();
+    expect(find('UPDATE')).toBeUndefined();
   });
 
   test.each([
@@ -494,19 +593,37 @@ describe('direct grants', () => {
   test('grants and removes read access as the signed-in user', async () => {
     await withApp(async (base) => {
       expect(
-        (await call(base, '/api/catalog/tables/accounts/access/grants', { body: { principal: 'account users' } }))
+        (await call(base, '/api/catalog/tables/accounts/access/grants', { body: { principal: 'daiwt2026' } })).status
+      ).toBe(200);
+      expect(
+        (await call(base, '/api/catalog/tables/accounts/access/grants', { body: { principal: 'bob@example.com' } }))
           .status
       ).toBe(200);
-      const removed = await call(base, '/api/catalog/tables/accounts/access/grants?principal=daiwt2026', {
+      const removed = await call(base, '/api/catalog/tables/accounts/access/grants?principal=account%20users', {
         method: 'DELETE',
       });
       expect(removed.status).toBe(200);
     });
     expect(ran('user:tok-ana')).toEqual([
-      'GRANT USE SCHEMA ON SCHEMA fincrime.data_products TO `account users`',
-      'GRANT SELECT ON TABLE fincrime.data_products.accounts TO `account users`',
-      'REVOKE SELECT ON TABLE fincrime.data_products.accounts FROM `daiwt2026`',
+      'GRANT USE SCHEMA ON SCHEMA fincrime.data_products TO `daiwt2026`',
+      'GRANT SELECT ON TABLE fincrime.data_products.accounts TO `daiwt2026`',
+      'GRANT USE SCHEMA ON SCHEMA fincrime.data_products TO `bob@example.com`',
+      'GRANT SELECT ON TABLE fincrime.data_products.accounts TO `bob@example.com`',
+      'REVOKE SELECT ON TABLE fincrime.data_products.accounts FROM `account users`',
     ]);
+  });
+
+  test.each([
+    ['themselves', 'Ana@Example.com', 403],
+    ['a group that is not listed', 'other-team', 400],
+    ['account users unless listed', 'account users', 400],
+  ])('refuses direct grants to %s', async (_label, principal, status) => {
+    await withApp(async (base) => {
+      expect((await call(base, '/api/catalog/tables/accounts/access/grants', { body: { principal } })).status).toBe(
+        status
+      );
+    });
+    expect(find('GRANT')).toBeUndefined();
   });
 
   test("never removes the app's own access", async () => {

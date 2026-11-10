@@ -33,12 +33,12 @@ flowchart LR
 The implemented Catalog Manager app uses Genie One MCP
 (`system.ai.genie_one_mcp`) for Ask with the signed-in user's accessible context,
 not a single-space restriction. Catalog browses `fincrime.data_products` (no medallion layers shown,
-[decision 0004](../decisions/0004-data-products-schema.md)); the glossary stays in `fincrime.gold`, and access
+[decision 0004](../decisions/0004-data-products-schema.md)), including the glossary, and access
 requests are stored in `fincrime.catalog_manager`. Discover Pages
 is a separate account-level, domain-governed Beta feature.
 
 ```text
-Catalog Manager Glossary -> fincrime.gold.business_glossary -> Genie space
+Catalog Manager Glossary -> fincrime.data_products.business_glossary -> Genie space
                          -> selected-term document download
                             -> Discover Pages / Genie Code bulk import
                                -> human review and publication -> Genie One

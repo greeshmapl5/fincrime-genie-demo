@@ -23,8 +23,8 @@ export type TableAccess = {
   grants: AccessGrant[];
 };
 
-export const ALL_USERS = 'account users';
 export const MAX_TEXT = 500;
+export const samePerson = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 export const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending',
   approved: 'Approved',

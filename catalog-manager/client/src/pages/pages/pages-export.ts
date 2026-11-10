@@ -38,7 +38,7 @@ export function buildPagesDocument(terms: PageTerm[], domain: string): string {
     '',
     'Review material only. This document does not create, publish, or synchronize Databricks Pages.',
     `Requested domain or subdomain: ${markdownText(domain.trim())}`,
-    'Source: fincrime.gold.business_glossary (Catalog Manager).',
+    'Source: fincrime.data_products.business_glossary (Catalog Manager).',
     'Assign Page owners and verify related assets in Databricks. Glossary owner values and data rows are not exported.',
     '',
     ...sections,

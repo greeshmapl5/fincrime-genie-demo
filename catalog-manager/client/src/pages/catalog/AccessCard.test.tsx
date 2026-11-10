@@ -66,10 +66,8 @@ const actions: AccessActions = {
   onGrant: ok,
   onRemove: ok,
 };
-const render = (access: TableAccess, busy = false) =>
-  renderToStaticMarkup(
-    <AccessView access={access} groups={['account users', 'daiwt2026']} busy={busy} actions={actions} />
-  );
+const render = (access: TableAccess, busy = false, groups = ['capgemini-gen-ai', 'daiwt2026']) =>
+  renderToStaticMarkup(<AccessView access={access} groups={groups} busy={busy} actions={actions} />);
 
 describe('AccessView', () => {
   it('tells requesters whether they can read and who approves', () => {
@@ -83,11 +81,21 @@ describe('AccessView', () => {
     expect(html).not.toContain('Who can read this data product');
   });
 
-  it('suggests a group request to people who can already read', () => {
+  it('suggests a group request to people who can already read, choosing only from listed groups', () => {
     const html = render(manager);
     expect(html).toContain('✓ You can read this data product.');
     expect(html).toMatch(/<input type="radio"[^>]*checked=""[^>]*\/>An account group/);
-    expect(html).toMatch(/<input class="[^"]*" list="[^"]+" required=""/);
+    expect(html).toMatch(
+      /<select[^>]*required=""[^>]*><option value=""[^>]*>Choose a group<\/option><option value="capgemini-gen-ai">capgemini-gen-ai<\/option><option value="daiwt2026">daiwt2026<\/option><\/select>/
+    );
+    expect(html).not.toContain('account users');
+  });
+
+  it('offers only requests for yourself when no groups are listed', () => {
+    const html = render(manager, false, []);
+    expect(html).not.toContain('An account group');
+    expect(html).not.toContain('<select');
+    expect(html).toMatch(/<input type="radio"[^>]*checked=""[^>]*\/>Me \(owner@example.com\)/);
   });
 
   it('lists your requests with their status in text and lets you cancel pending ones', () => {
@@ -123,7 +131,9 @@ describe('AccessView', () => {
     expect(html).toContain('<strong>ana@example.com</strong> asks read access for <strong>daiwt2026</strong> (group)');
     expect(html).toContain('aria-label="Approve request from ana@example.com for daiwt2026"');
     expect(html).toContain('aria-label="Reject request from ana@example.com for daiwt2026"');
-    expect(html).toMatch(/Grant to<input class="[^"]*" list="[^"]+" autoComplete="off" value="daiwt2026"/i);
+    expect(html).toMatch(
+      /Grant to \(user email or listed group\)<input class="[^"]*" list="[^"]+" autoComplete="off" value="daiwt2026"/i
+    );
     expect(html).toContain('Catalog Manager app (service principal)');
     expect(html).not.toContain('app-sp-id');
     expect(html).toContain('<td class="py-1 pr-4">Whole schema</td>');
@@ -133,6 +143,16 @@ describe('AccessView', () => {
       'aria-label="Remove read access for daiwt2026"',
     ]);
     expect(html).toContain('Grant read access');
+  });
+
+  it('does not let approvers decide their own requests', () => {
+    const html = render({
+      ...manager,
+      pending: [request({ id: 'r3', requester: 'Owner@example.com', grantee: 'daiwt2026', granteeType: 'group' })],
+    });
+    expect(html).toContain('This is your own request, so another approver must decide it.');
+    expect(html).not.toContain('aria-label="Approve request');
+    expect(html).not.toContain('aria-label="Reject request');
   });
 
   it('keeps every button focusable while a change is saving', () => {

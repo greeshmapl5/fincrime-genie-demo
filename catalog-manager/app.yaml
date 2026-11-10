@@ -9,4 +9,6 @@ env:
   - name: SCHEMA_NAME
     value: "data_products"
   - name: GLOSSARY_SCHEMA_NAME
-    value: "gold"
+    value: "data_products"
+  - name: ACCESS_GROUPS
+    value: "daiwt2026,capgemini-gen-ai"

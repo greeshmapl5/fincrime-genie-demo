@@ -17,7 +17,15 @@ const LOCAL_GROUPS = new Set(['admins', 'users']);
 const ALL_USERS = 'account users';
 const READ_PRIVILEGES = new Set(['SELECT', 'ALL PRIVILEGES']);
 const MAX_TEXT = 500;
-const GROUPS_TTL_MS = 5 * 60_000;
+// Missing or empty configuration allows no groups, including in local development.
+const CONFIGURED_GROUPS = [
+  ...new Set(
+    (process.env.ACCESS_GROUPS ?? '')
+      .split(',')
+      .map((g) => g.trim())
+      .filter((g) => g && PRINCIPAL.test(g) && !LOCAL_GROUPS.has(g))
+  ),
+];
 const COLUMNS =
   'id, table_name, requester, grantee, grantee_type, privilege, reason, status, created_at, decided_by, decided_at, decision_note';
 
@@ -37,11 +45,11 @@ class HttpError extends Error {
 
 const appClient = new WorkspaceClient({});
 let tableReady: Promise<void> | undefined;
-let groupCache: { at: number; groups: string[] } | undefined;
 let devUser: Promise<string> | undefined;
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const param = (name: string, value: string): Param => ({ name, value });
+const samePerson = (a: string | null | undefined, b: string) => !!a && a.toLowerCase() === b.toLowerCase();
 const fullName = (table: string) => `${CATALOG}.${SCHEMA}.${table}`;
 const granteeType = (principal: string) =>
   principal.includes('@')
@@ -243,20 +251,23 @@ async function readGrants(caller: Caller, table: string) {
     });
 }
 
-async function groups() {
-  if (groupCache && Date.now() - groupCache.at < GROUPS_TTL_MS) return groupCache.groups;
-  try {
-    const rows = await sql(appClient, 'SHOW GROUPS');
-    const names = rows
-      .map((r) => r.name ?? '')
-      .filter((n) => n && n !== ALL_USERS && !LOCAL_GROUPS.has(n) && PRINCIPAL.test(n))
-      .sort((a, b) => a.localeCompare(b));
-    groupCache = { at: Date.now(), groups: [ALL_USERS, ...names] };
-    return groupCache.groups;
-  } catch (e) {
-    console.warn('access: could not list groups:', errorText(e));
-    return [ALL_USERS];
+// Groups come only from the allowed list, so nobody can type another group or another person's email.
+function listedGroup(name: string) {
+  if (!CONFIGURED_GROUPS.includes(name)) {
+    const offered = CONFIGURED_GROUPS.length ? CONFIGURED_GROUPS.join(', ') : 'none';
+    throw new HttpError(400, `"${name}" is not a group you can choose here. Allowed groups: ${offered}.`);
   }
+  return name;
+}
+
+// Approvers may grant to a user, a service principal or a listed group, but never to themselves.
+function grantee(value: unknown, caller: Caller) {
+  const name = principal(value);
+  if (granteeType(name) === 'group') listedGroup(name);
+  if (samePerson(name, caller.email)) {
+    throw new HttpError(403, 'You cannot give yourself access here. Ask another approver to approve your request.');
+  }
+  return name;
 }
 
 const route = (handler: (req: Request, res: Response) => Promise<void>) => async (req: Request, res: Response) => {
@@ -284,7 +295,7 @@ export function setupAccessRoutes(app: Application) {
     '/api/catalog/access/groups',
     route(async (req, res) => {
       await callerOf(req);
-      res.json({ groups: await groups() });
+      res.json({ groups: CONFIGURED_GROUPS });
     })
   );
 
@@ -355,8 +366,8 @@ export function setupAccessRoutes(app: Application) {
       const caller = await callerOf(req);
       const body = (req.body ?? {}) as { group?: unknown; reason?: unknown };
       const forGroup = body.group !== undefined && body.group !== null && body.group !== '';
-      const grantee = principal(forGroup ? body.group : caller.email);
       const reason = text(body.reason, 'Reason', true);
+      const grantee = forGroup ? listedGroup(principal(body.group)) : principal(caller.email);
       await ensureTable();
       await tableOwner(table);
       const full = fullName(table);
@@ -403,10 +414,14 @@ export function setupAccessRoutes(app: Application) {
       const body = (req.body ?? {}) as { grantee?: unknown; note?: unknown };
       const note = text(body.note, 'Note', false);
       const request = await pendingRequest(routeParam(req, 'id'));
-      const grantee = principal(body.grantee === undefined || body.grantee === '' ? request.grantee : body.grantee);
-      await grantRead(caller, request.table_name, grantee);
-      await decide(request.id, 'approved', caller.email, note, grantee);
-      res.json({ ok: true, grantee });
+      // Separation of duties: someone other than the requester decides.
+      if (samePerson(request.requester, caller.email)) {
+        throw new HttpError(403, 'You cannot approve your own request. Ask another approver.');
+      }
+      const to = grantee(body.grantee === undefined || body.grantee === '' ? request.grantee : body.grantee, caller);
+      await grantRead(caller, request.table_name, to);
+      await decide(request.id, 'approved', caller.email, note, to);
+      res.json({ ok: true, grantee: to });
     })
   );
 
@@ -431,9 +446,9 @@ export function setupAccessRoutes(app: Application) {
     route(async (req, res) => {
       const table = tableOf(req);
       const caller = await callerOf(req);
-      const grantee = principal((req.body as { principal?: unknown } | undefined)?.principal);
-      await grantRead(caller, fullName(table), grantee);
-      res.json({ ok: true, grantee });
+      const to = grantee((req.body as { principal?: unknown } | undefined)?.principal, caller);
+      await grantRead(caller, fullName(table), to);
+      res.json({ ok: true, grantee: to });
     })
   );
 

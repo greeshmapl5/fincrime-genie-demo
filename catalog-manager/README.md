@@ -9,9 +9,12 @@ A Databricks App powered by [AppKit](https://developers.databricks.com/docs/appk
 Catalog automatically displays the configured catalog and schema when opened,
 including when there are no tables. `/api/catalog/context` supplies the server's
 `CATALOG_NAME` and `SCHEMA_NAME` values (defaults: `fincrime` and `data_products`)
-plus a display label (`data_products` → "Data products"). The glossary table lives
-in `GLOSSARY_SCHEMA_NAME` (default `gold`), where the Genie space reads it
-([decision 0004](../decisions/0004-data-products-schema.md)).
+plus a display label (`data_products` → "Data products"). The glossary table
+`business_glossary` lives in `GLOSSARY_SCHEMA_NAME` (default: the `SCHEMA_NAME`
+schema), where the Genie space reads it, so Catalog lists it with the data products
+([decision 0004](../decisions/0004-data-products-schema.md)). If the app cannot
+create it at startup (no `CREATE TABLE`), it logs a warning and uses the table the
+schema owner created.
 
 ## Catalog: governed tags
 
@@ -41,11 +44,20 @@ Validate with `npx vitest run server/catalog.test.ts client/src/pages/catalog/Go
 
 The **Access** card ([E1-S16](../backlog/stories/E1-S16-access-requests.md)) shows
 whether you can read the selected data product, and who owns it. Anyone signed in
-can request read access for themselves or an account group, with a reason, and
-cancel their own pending request. Owners, MANAGE holders and admins also see the
-requests to review (Approve, optionally for another principal, or Reject, with a
-note) and who can read the object, and can grant or remove access directly. They
+can request read access for themselves or a listed account group, with a reason,
+and cancel their own pending request. Owners, MANAGE holders and admins also see
+the requests to review (Approve, optionally for another principal, or Reject, with
+a note) and who can read the object, and can grant or remove access directly. They
 also see an "n pending" badge in the table list.
+
+Guardrails ([decision 0005 amendment](../decisions/0005-access-approvals-as-approver.md#amendment--2026-11-10-listed-groups-and-separation-of-duties)):
+
+- **Listed groups**: requests, approvals and grants accept only the groups in
+  `ACCESS_GROUPS` (comma-separated, set in `app.yaml`). Missing, empty or
+  whitespace-only values allow no groups; there is no group-discovery fallback.
+  Requests for yourself remain available. Set this explicitly for local development too.
+- **Separation of duties**: nobody can approve their own request or grant
+  themselves access (403).
 
 Grants run **as the signed-in user**
 ([decision 0005](../decisions/0005-access-approvals-as-approver.md), proposed). Each
@@ -53,7 +65,7 @@ request builds a client from `x-forwarded-access-token` (`sql` scope), so Unity
 Catalog checks the approver's own rights. Approve and Grant run `GRANT USE SCHEMA`
 on the schema and `GRANT SELECT` on the table. Remove runs `REVOKE SELECT` on the
 table only, and cannot remove the app's own access. The app service principal only
-reads and writes request rows and lists groups.
+reads and writes request rows. The group list comes only from app configuration.
 
 - Requests live in `<CATALOG_NAME>.<ACCESS_SCHEMA_NAME>.access_requests` (default
   `fincrime.catalog_manager.access_requests`). The app creates the table; its service
@@ -135,7 +147,7 @@ replicated globally and must not contain PII, regulated data, or sensitive
 information. See the official documentation for current permissions and limitations.
 
 **Important distinctions:**
-- The export is a snapshot of selected terms from `fincrime.gold.business_glossary`.
+- The export is a snapshot of selected terms from `fincrime.data_products.business_glossary`.
   Refresh it after glossary edits; downloading is not publication.
 - Pages feed the human-modeled context of the Genie Ontology used by **Genie One**.
   Published Pages are available to users with domain access; drafts are only

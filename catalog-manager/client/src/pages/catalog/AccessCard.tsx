@@ -2,12 +2,12 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@databricks/appkit-ui/react';
 import { api } from './api';
 import {
-  ALL_USERS,
   MAX_TEXT,
   SOURCE_LABEL,
   STATUS_LABEL,
   formatWhen,
   principalLabel,
+  samePerson,
   type AccessGrant,
   type AccessRequest,
   type TableAccess,
@@ -42,13 +42,13 @@ function StatusBadge({ status }: { status: string }) {
 function RequestForm({
   me,
   forGroup,
-  listId,
+  groups,
   busy,
   onRequest,
 }: {
   me: string;
   forGroup: boolean;
-  listId: string;
+  groups: string[];
   busy: boolean;
   onRequest: AccessActions['onRequest'];
 }) {
@@ -56,13 +56,15 @@ function RequestForm({
   const [target, setTarget] = useState<'me' | 'group'>(forGroup ? 'group' : 'me');
   const [group, setGroup] = useState('');
   const [reason, setReason] = useState('');
+  // Groups load separately; without any, requests are for yourself only.
+  const forListedGroup = target === 'group' && groups.length > 0;
   return (
     <form
       className="space-y-3 text-sm"
       onSubmit={(e) => {
         e.preventDefault();
-        if (busy || (target === 'group' && !group.trim())) return;
-        void onRequest(reason, target === 'group' ? group.trim() : undefined).then((ok) => {
+        if (busy || (forListedGroup && !group)) return;
+        void onRequest(reason, forListedGroup ? group : undefined).then((ok) => {
           if (ok) setReason('');
         });
       }}
@@ -75,35 +77,36 @@ function RequestForm({
               type="radio"
               name={`${id}-for`}
               className="accent-primary"
-              checked={target === 'me'}
+              checked={!forListedGroup}
               onChange={() => setTarget('me')}
             />
             Me ({me})
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name={`${id}-for`}
-              className="accent-primary"
-              checked={target === 'group'}
-              onChange={() => setTarget('group')}
-            />
-            An account group
-          </label>
+          {groups.length > 0 && (
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name={`${id}-for`}
+                className="accent-primary"
+                checked={forListedGroup}
+                onChange={() => setTarget('group')}
+              />
+              An account group
+            </label>
+          )}
         </div>
       </fieldset>
-      {target === 'group' && (
+      {forListedGroup && (
         <label className="flex flex-col gap-1">
           Account group
-          <input
-            className={FIELD}
-            list={listId}
-            required
-            autoComplete="off"
-            placeholder={ALL_USERS}
-            value={group}
-            onChange={(e) => setGroup(e.target.value)}
-          />
+          <select className={FIELD} required value={group} onChange={(e) => setGroup(e.target.value)}>
+            <option value="">Choose a group</option>
+            {groups.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
         </label>
       )}
       <label className="flex flex-col gap-1">
@@ -127,6 +130,7 @@ function RequestForm({
 
 function PendingItem({
   request,
+  me,
   listId,
   busy,
   onApprove,
@@ -134,6 +138,7 @@ function PendingItem({
   beforeDecide,
 }: {
   request: AccessRequest;
+  me: string;
   listId: string;
   busy: boolean;
   onApprove: AccessActions['onApprove'];
@@ -148,6 +153,7 @@ function PendingItem({
     beforeDecide();
     void action();
   };
+  const own = samePerson(request.requester, me);
   return (
     <li className="rounded-lg border p-3 text-sm space-y-2">
       <p>
@@ -156,41 +162,47 @@ function PendingItem({
         <span className="text-muted-foreground"> · {formatWhen(request.createdAt)}</span>
       </p>
       <p className="break-words">“{request.reason}”</p>
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1">
-          Grant to
-          <input
-            className={FIELD}
-            list={listId}
-            autoComplete="off"
-            value={grantee}
-            onChange={(e) => setGrantee(e.target.value)}
-          />
-        </label>
-        <label className="flex flex-col gap-1 flex-1 min-w-48">
-          Note to the requester (optional)
-          <input className={FIELD} maxLength={MAX_TEXT} value={note} onChange={(e) => setNote(e.target.value)} />
-        </label>
-        <Button
-          size="sm"
-          aria-disabled={busy || undefined}
-          className={BUSY}
-          aria-label={`Approve request from ${request.requester} for ${request.grantee}`}
-          onClick={() => decide(() => onApprove(request, grantee.trim() || request.grantee, note))}
-        >
-          Approve
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          aria-disabled={busy || undefined}
-          className={BUSY}
-          aria-label={`Reject request from ${request.requester} for ${request.grantee}`}
-          onClick={() => decide(() => onReject(request, note))}
-        >
-          Reject
-        </Button>
-      </div>
+      {own ? (
+        <p className="text-muted-foreground">
+          This is your own request, so another approver must decide it. You can cancel it under Your requests.
+        </p>
+      ) : (
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1">
+            Grant to (user email or listed group)
+            <input
+              className={FIELD}
+              list={listId}
+              autoComplete="off"
+              value={grantee}
+              onChange={(e) => setGrantee(e.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 flex-1 min-w-48">
+            Note to the requester (optional)
+            <input className={FIELD} maxLength={MAX_TEXT} value={note} onChange={(e) => setNote(e.target.value)} />
+          </label>
+          <Button
+            size="sm"
+            aria-disabled={busy || undefined}
+            className={BUSY}
+            aria-label={`Approve request from ${request.requester} for ${request.grantee}`}
+            onClick={() => decide(() => onApprove(request, grantee.trim() || request.grantee, note))}
+          >
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            aria-disabled={busy || undefined}
+            className={BUSY}
+            aria-label={`Reject request from ${request.requester} for ${request.grantee}`}
+            onClick={() => decide(() => onReject(request, note))}
+          >
+            Reject
+          </Button>
+        </div>
+      )}
     </li>
   );
 }
@@ -260,7 +272,7 @@ function GrantForm({ listId, busy, onGrant }: { listId: string; busy: boolean; o
       }}
     >
       <label className="flex flex-col gap-1">
-        User email or account group
+        User email or listed group
         <input
           className={FIELD}
           list={listId}
@@ -320,7 +332,7 @@ export function AccessView({
         <RequestForm
           me={access.me}
           forGroup={access.hasAccess}
-          listId={listId}
+          groups={groups}
           busy={busy}
           onRequest={actions.onRequest}
         />
@@ -386,6 +398,7 @@ export function AccessView({
                   <PendingItem
                     key={r.id}
                     request={r}
+                    me={access.me}
                     listId={listId}
                     busy={busy}
                     onApprove={actions.onApprove}
@@ -429,7 +442,7 @@ export function AccessView({
 
 export function AccessCard({ table, onChanged }: { table: string; onChanged: () => void }) {
   const [access, setAccess] = useState<TableAccess | null>(null);
-  const [groups, setGroups] = useState<string[]>([ALL_USERS]);
+  const [groups, setGroups] = useState<string[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);

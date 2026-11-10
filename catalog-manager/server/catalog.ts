@@ -3,8 +3,8 @@ import type { Application, Response } from 'express';
 
 const CATALOG = process.env.CATALOG_NAME ?? 'fincrime';
 const SCHEMA = process.env.SCHEMA_NAME ?? 'data_products';
-// The glossary stays in gold because the Genie space reads it there (decision 0004).
-const GLOSSARY_SCHEMA = process.env.GLOSSARY_SCHEMA_NAME ?? 'gold';
+// The glossary lives with the data products, where the Genie space reads it (decision 0004).
+const GLOSSARY_SCHEMA = process.env.GLOSSARY_SCHEMA_NAME ?? SCHEMA;
 const WAREHOUSE = process.env.DATABRICKS_WAREHOUSE_ID ?? '';
 const GLOSSARY = `${CATALOG}.${GLOSSARY_SCHEMA}.business_glossary`;
 const IDENT = /^[A-Za-z0-9_]+$/;
@@ -94,12 +94,17 @@ export async function setupCatalogRoutes(app: Application) {
     res.json({ catalog: CATALOG, schema: SCHEMA, schemaLabel: displayName(SCHEMA) });
   });
 
-  await run(
-    `CREATE TABLE IF NOT EXISTS ${GLOSSARY} (
-       term STRING, definition STRING, related_table STRING, related_column STRING,
-       owner STRING, updated_at TIMESTAMP
-     ) COMMENT 'Business glossary maintained from the catalog-manager app'`,
-  );
+  try {
+    await run(
+      `CREATE TABLE IF NOT EXISTS ${GLOSSARY} (
+         term STRING, definition STRING, related_table STRING, related_column STRING,
+         owner STRING, updated_at TIMESTAMP
+       ) COMMENT 'Business glossary maintained from the catalog-manager app'`,
+    );
+  } catch (e) {
+    // Without CREATE TABLE the schema owner pre-creates the table; the routes below still work then.
+    console.warn(`Glossary table ${GLOSSARY} not created: ${(e as Error).message}`);
+  }
 
   app.get('/api/catalog/tables', async (_req, res) => {
     try {

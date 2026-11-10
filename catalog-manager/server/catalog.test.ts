@@ -89,7 +89,7 @@ test.each([
 const statements = () =>
   sdk.executeStatement.mock.calls.map(([req]) => req as { statement: string; parameters?: { name: string; value: string }[] });
 
-test('browses data_products and keeps the glossary in gold by default', async () => {
+test('browses data_products and keeps the glossary there by default', async () => {
   vi.stubEnv('CATALOG_NAME', undefined);
   vi.stubEnv('SCHEMA_NAME', undefined);
   vi.stubEnv('GLOSSARY_SCHEMA_NAME', undefined);
@@ -103,12 +103,37 @@ test('browses data_products and keeps the glossary in gold by default', async ()
     expect((await fetch(`${base}/api/glossary`)).status).toBe(200);
   });
   const calls = statements();
-  expect(calls[0].statement).toContain('CREATE TABLE IF NOT EXISTS fincrime.gold.business_glossary');
+  expect(calls[0].statement).toContain('CREATE TABLE IF NOT EXISTS fincrime.data_products.business_glossary');
   expect(calls.find((c) => c.statement.includes('information_schema.tables'))?.parameters).toContainEqual({
     name: 'schema',
     value: 'data_products',
   });
-  expect(calls.map((c) => c.statement)).toContain('SELECT * FROM fincrime.gold.business_glossary ORDER BY term');
+  expect(calls.map((c) => c.statement)).toContain('SELECT * FROM fincrime.data_products.business_glossary ORDER BY term');
+});
+
+test('keeps the glossary in SCHEMA_NAME when GLOSSARY_SCHEMA_NAME is not set', async () => {
+  vi.stubEnv('SCHEMA_NAME', 'review_schema');
+  vi.stubEnv('GLOSSARY_SCHEMA_NAME', undefined);
+  await withApp(async (base) => {
+    expect((await fetch(`${base}/api/glossary`)).status).toBe(200);
+  });
+  expect(statements().map((c) => c.statement)).toContain('SELECT * FROM fincrime.review_schema.business_glossary ORDER BY term');
+});
+
+test('serves the catalog and a pre-created glossary when the app cannot create the glossary table', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  sdk.executeStatement.mockResolvedValueOnce({
+    status: { state: 'FAILED', error: { message: 'PERMISSION_DENIED: User does not have CREATE TABLE on Schema' } },
+  });
+  try {
+    await withApp(async (base) => {
+      expect((await fetch(`${base}/api/catalog/tables`)).status).toBe(200);
+      expect((await fetch(`${base}/api/glossary`)).status).toBe(200);
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('PERMISSION_DENIED'));
+  } finally {
+    warn.mockRestore();
+  }
 });
 
 test('uses GLOSSARY_SCHEMA_NAME for glossary reads and writes', async () => {

@@ -1,12 +1,52 @@
 # HANDOVER
 
 > Keep this file current. Whoever (human or agent) ends a session updates it.
-> Last updated: 2026-11-10 — by Copilot (Catalog Manager access requests, E1-S16)
+> Last updated: 2026-11-10 — by Copilot (access requests: fail-closed group allowlist and no self-approval, E1-S16; glossary moved to `data_products`)
 
 ## Project in one line
 Build the Databricks demo for our Summit booth (December 2026) and run the project with human + Claude agent collaboration.
 
 ## Status
+- **Access requests hardened (2026-11-10, deployed; E1-S16):** After reviewing a
+  teammate's proposal, the developer asked for two guardrails; Lakebase storage and
+  service-principal grants were skipped on purpose.
+  - Requests, approvals and grants now accept only the groups in `ACCESS_GROUPS`
+    (`daiwt2026,capgemini-gen-ai` in `app.yaml`); `account users` is excluded unless
+    listed. Missing, empty or whitespace-only configuration allows no groups:
+    the `SHOW GROUPS` fallback has been removed, including for local development.
+  - Nobody can approve their own request or grant themselves access (403).
+  - The request form uses a group drop-down. Your own pending request shows a note
+    instead of Approve/Reject.
+  - Chosen while the developer was unavailable; recorded as an amendment to decision
+    0005, which a human must confirm.
+  - 61 focused access API/UI tests pass, including empty-allowlist rejection on
+    requests, existing approvals, approval overrides and direct grants. Full
+    `databricks apps validate --path .\catalog-manager --profile dario-ws` passed
+    type generation, AST-grep lint, typecheck, build and all tests; focused ESLint
+    and Prettier pass.
+  - **Deployed repair** `01f1dd02fe9c1a6aa2b2b67a763ffcb9` at 12:34 UTC after a
+    drift check (only `server/access.ts` and its test uploaded; app config and UI
+    already matched). Live checks passed: unlisted groups rejected, a listed-group
+    request accepted, self-approval refused even with a recipient override, and
+    grants unchanged. The validation request was cancelled; its audit row is retained.
+  - **Demo impact**: step 6 now needs a second person to make the request.
+  - **Not committed**: uncommitted on `story/E1-S15-data-products-schema`.
+- **Glossary moved to `data_products` (2026-11-10, deployed; E1-S15 amendment):**
+  At the developer's request, the Glossary page reads and writes
+  `fincrime.data_products.business_glossary`, and Catalog lists it with the 9 data
+  products (10 tables). The schema owner created the table and copied the 2 gold
+  terms; the app SP needs no `CREATE TABLE` there (if the startup create fails, the
+  app now logs a warning and keeps serving). `fincrime.gold.business_glossary` is
+  unchanged: a frozen copy that nothing reads any more. 102 tests, typecheck and
+  build pass. **Deployed** `01f1dcf9919d10739441c49738acb397` (5 files after a drift
+  check; Ask files untouched); a live test term landed only in `data_products` and
+  was deleted. The Genie space Investigations Analyst now reads the glossary from
+  `data_products` too (`src/05_genie_glossary_space.py`, new `--dry-run`; only the
+  table entry and one instruction line changed) and answered "What does Structuring
+  mean?" from there. Chosen while the developer was unavailable: keep the gold copy,
+  repoint the space, list the glossary in Catalog. Confirm with decision 0004's
+  amendment (action 10) and tell Greeshma (the space is in her folder). **Not
+  committed**: uncommitted on `story/E1-S15-data-products-schema`, on top of `46d0673`.
 - **Catalog access requests (2026-11-10, deployed; E1-S16 in progress):** The
   Catalog page has an **Access** card. Anyone signed in can request read access to
   a data product for themselves or an account group, with a reason. Owners, MANAGE
@@ -21,8 +61,8 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
   (7 files after a drift check; Ask files untouched). Original grants restored and
   test requests deleted. **Open:** a second, non-owner user in the browser; readers
   need `USE CATALOG` on `fincrime` (action 12); the preview still runs as the app SP.
-  **Not committed**: on `story/E1-S15-data-products-schema`; move to
-  `story/E1-S16-access-requests`.
+  **Committed locally** in `46d0673` on `story/E1-S15-data-products-schema` (not
+  pushed); move to `story/E1-S16-access-requests`.
 - **Catalog Manager availability (2026-11-10, verified):** The unavailable report
   at 09:30:42 UTC coincided with startup. Live logs show runtime starting at
   09:28:52 UTC, build success at 09:30:53 UTC and the server listening at
@@ -40,17 +80,18 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
   demo. Created empty `fincrime.data_products` in dario-ws (owner: requester) and
   granted the app SP `USE SCHEMA`, `SELECT`, `MODIFY`, `APPLY TAG` on it.
   `bronze`/`silver`/`gold` untouched. Catalog Manager now defaults to
-  `SCHEMA_NAME=data_products` (labelled "Data products") and keeps the glossary in
-  `gold` via new `GLOSSARY_SCHEMA_NAME` (decision 0004, **proposed**); `app.yaml`
-  sets both. Catalog shows an empty-state message. 59 tests, typecheck and client
+  `SCHEMA_NAME=data_products` (labelled "Data products") and kept the glossary in
+  `gold` via new `GLOSSARY_SCHEMA_NAME` until it moved on 2026-11-10 (see above;
+  decision 0004, **proposed**); `app.yaml` sets both. Catalog shows an empty-state message. 59 tests, typecheck and client
   build pass; a local run against dario-ws showed the header, empty state and the
   2 gold glossary terms. **Deployed** `01f1dc52bc1311ab9b060d683a47452e` after the app
   was restarted: uploaded only `server/catalog.ts`, `server/catalog.test.ts`,
   `CatalogPage.tsx` and `app.yaml` (live copies differed only by this story; verified
   after upload; Ask/identity files untouched). Live context returns "Data products",
   tables `[]`, glossary from gold; bundle has the empty state; Ask still
-  `app-service-principal`. **Not committed**: branch `story/E1-S15-data-products-schema`
-  was cut from the S11 branch with the uncommitted S11/S14 work, which shares
+  `app-service-principal`. **Committed locally** in `46d0673` (not pushed): branch
+  `story/E1-S15-data-products-schema` was cut from the S11 branch, and its two local
+  commits mix the S10/S11/S14/S15/S16 work, which shares
   `catalog.ts`, `CatalogPage.tsx`, `app.yaml` and docs. **Data sets created
   (2026-11-09):** new `src/06_build_data_products.py` copies `customer_360`,
   `transactions`, `counterparties`, `case_notes`, `alerts`, `structuring_candidates`,
@@ -72,7 +113,7 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
   `/health` 200, Ask identity still `app-service-principal`, the service principal
   reads 2 table and 113 `class.*` tag policies. **Live writes on `smoke_test`
   return the app's 403 ASSIGN message for all three tag types; tags unchanged.**
-  An account admin must grant ASSIGN (runbook). Not committed yet.
+  An account admin must grant ASSIGN (runbook). Committed locally in `46d0673` (not pushed).
 - **Ask Markdown tables (2026-11-06, deployed):** Genie One table answers (e.g.
   alerts by status, expected monthly volume) render as tables, not raw pipes.
   `client/src/pages/ask/AnswerMarkdown.tsx` adds `remark-gfm` 4.0.1 (exact pin),
@@ -220,10 +261,10 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 | E3 | Declarative Automation Bundles for new workspaces | Low |
 
 ## Next 3 steps
-1. E1-S15 and E1-S16: a human confirms decisions 0004 and 0005 and accepts the deployed Catalog (9 data products, Access card), including an access request from a second, non-owner user in the browser; commit `src/06_build_data_products.py` with E1-S15.
+1. E1-S15 and E1-S16: a human confirms decisions 0004 (with its glossary amendment) and 0005 (with its listed-groups and separation-of-duties amendment) and accepts the deployed Catalog (9 data products plus the glossary, Access card). Acceptance includes a second, non-owner user making a request in the browser that the owner then approves, since nobody can approve their own request.
 2. E1-S13: a domain owner imports and publishes an exported term in Discover Pages.
 3. E1-S11: human-test the Ask UI, sign-in/consent and a second user.
-(Stories are in `backlog/stories/`; split the uncommitted S10/S11/S14/S15/S16 work into one PR per story.)
+(Stories are in `backlog/stories/`. The S10/S11/S14/S15/S16 work sits in two local, unpushed commits on `story/E1-S15-data-products-schema` (`b5484a2` "changes to the app", `46d0673` "new changes", 2026-11-10), with the glossary move uncommitted on top; split it into one `E1-Sx:` commit and PR per story before pushing.)
 
 ## Open actions / blockers
 | # | Item | Owner | Status |
@@ -237,8 +278,8 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 | 7 | Resolve `NO_AVAILABLE_PHAROS_DEPLOYMENTS` for the Agent Bricks Knowledge Assistant | PM + workspace administrator | blocked |
 | 8 | Choose the Ask identity model (app service principal live vs per-user in repo), then align source, workspace folder and docs | PM + architect | open |
 | 9 | Grant ASSIGN on `system.certification_status`, `Financial Crime` and needed `class.*` tags to `app-2a3ty8 catalog-manager` (UI, notebook `scripts/grant_governed_tag_assign.py` or `scripts/grant-governed-tag-assign.ps1`; both tested up to the admin-only permission read on 2026-11-09); confirm decision 0003 and E1-S14 criteria | Account admin (likely the Free Edition account owner) + PM | open |
-| 10 | Confirm decision 0004 (Catalog uses `data_products`, glossary stays in `gold`) and E1-S15 criteria | PM + architect | open |
-| 11 | Confirm decision 0005 (access grants run as the signed-in approver) and E1-S16 criteria; test a request with a second, non-owner user | PM + architect | open |
+| 10 | Confirm decision 0004 and its 2026-11-10 amendment (Catalog and glossary in `data_products`; `gold.business_glossary` kept as a frozen copy) and the changed E1-S15 criteria. The Genie space now reads all 8 tables, including the glossary, from `data_products`; align or revert its other instructions, example SQL and benchmarks (still `gold`) | PM + architect + Greeshma (the space is in her folder) | open |
+| 11 | Confirm decision 0005 (access grants run as the signed-in approver) and its amendment (only `ACCESS_GROUPS` groups; no self-approval), plus the E1-S16 criteria; test a request with a second, non-owner user | PM + architect | open |
 | 12 | Grant readers `USE CATALOG` on `fincrime` (`` GRANT USE CATALOG ON CATALOG fincrime TO `account users` ``) or confirm they have it; approved readers cannot query without it | Catalog owner (Greeshma) or Dario (MANAGE) | open |
 
 ## Risks
@@ -254,7 +295,7 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 - Dataset and workspace are undecided and block E1; current workspace also blocks Agent Bricks deployment.
 - E2 and E3 are low priority and may slip.
 - Two certification signals: free-form `certified=true` (set by `src/02_build_gold_data_products.py`) and the governed `system.certification_status`. Decide which one the demo uses.
-- `fincrime.data_products` holds snapshot copies: after rerunning `02` or changing investigator decisions in Lakebase, rerun `src/06_build_data_products.py`, or Catalog and Ask (which still reads gold) can show different alert statuses.
+- `fincrime.data_products` holds snapshot copies. Since 2026-11-10 (space updated 09:53 UTC; who changed it is not recorded) the Genie space Investigations Analyst reads its 7 data tables from `data_products`, and since the glossary move (11:29 UTC, by Copilot) also the glossary; `gold.business_glossary` no longer receives new terms. The space's other instructions, 3 example SQL queries and 25 benchmarks still name `fincrime.gold.*`. `gold.alerts` is a live view over the Lakebase decisions, but `data_products.alerts` is a snapshot, so new investigator decisions reach Genie answers only after `src/06_build_data_products.py` is rerun (rerun it after `02` too).
 - Catalog's 20-row preview runs as the app SP, so people without SELECT on a data product still see sample rows; access approvals only govern their own queries (decision 0005; follow-up with E1-S12).
 
 ## Key links

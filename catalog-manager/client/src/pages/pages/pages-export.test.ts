@@ -14,7 +14,7 @@ describe('Pages export', () => {
     expect(document).toContain('## Structuring');
     expect(document).toContain('Definition: Splitting deposits below a threshold\\.');
     expect(document).toContain('Requested domain or subdomain: Financial Crime');
-    expect(document).toContain('fincrime.gold.business_glossary');
+    expect(document).toContain('fincrime.data_products.business_glossary');
     expect(document).toContain('fincrime\\.gold\\.structuring\\_candidates');
     expect(document).toContain('does not create, publish, or synchronize');
   });
