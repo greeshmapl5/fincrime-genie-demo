@@ -10,6 +10,7 @@ All content is fictional and synthetic. Free and open source tools where possibl
 ## Before the first take
 - [ ] Licence and sponsor-workspace question answered, or the squad has agreed to proceed.
 - [ ] Data notebooks have run, and the last cell of `02_build_gold_data_products` printed "All checks passed".
+- [ ] `06_build_data_products` has run with `reset_metadata = true`, so Catalog shows fresh data products and a clean `demo_sandbox`.
 - [ ] Lakebase decisions at seed: `SELECT decision, COUNT(*) FROM case_decisions GROUP BY decision;` returns 20 and 20, and no row for A0107.
 - [ ] `fincrime_source` catalog refreshed in Catalog (refresh schema icon).
 - [ ] Genie space instructions match `docs/genie/instructions.md`, and the data list is correct.

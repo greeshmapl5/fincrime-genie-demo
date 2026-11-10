@@ -127,7 +127,7 @@ export default function App() {
 function HomePage() {
   const items = [
     { to: '/ask', icon: MessageSquare, title: 'Ask your data', text: 'Explore accessible data and published business definitions with Genie One. Inspect the SQL behind each answer.' },
-    { to: '/catalog', icon: Database, title: 'Catalog', text: 'Browse data, improve table and column descriptions, and set classification tags.' },
+    { to: '/catalog', icon: Database, title: 'Catalog', text: 'Browse data, improve table and column descriptions, and set classification and governed tags.' },
     { to: '/glossary', icon: BookOpen, title: 'Glossary', text: 'Create shared business definitions for your team. Terms are not automatically published to Genie.' },
     { to: '/pages', icon: FileText, title: 'Prepare Pages export', text: 'Export glossary terms for human-reviewed import and publication in Databricks Discover.' },
   ];

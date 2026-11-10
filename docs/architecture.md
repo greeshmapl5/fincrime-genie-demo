@@ -32,7 +32,9 @@ flowchart LR
 
 The implemented Catalog Manager app uses Genie One MCP
 (`system.ai.genie_one_mcp`) for Ask with the signed-in user's accessible context,
-not a single-space restriction, and `fincrime.gold` for metadata and glossary management. Discover Pages
+not a single-space restriction. Catalog browses `fincrime.data_products` (no medallion layers shown,
+[decision 0004](../decisions/0004-data-products-schema.md)); the glossary stays in `fincrime.gold`, and access
+requests are stored in `fincrime.catalog_manager`. Discover Pages
 is a separate account-level, domain-governed Beta feature.
 
 ```text
@@ -42,6 +44,9 @@ Catalog Manager Glossary -> fincrime.gold.business_glossary -> Genie space
                                -> human review and publication -> Genie One
 Catalog Manager Ask -> user-forwarded OAuth token (ai-gateway scope) -> Genie One MCP
                     -> accessible data and published Pages
+Catalog Manager Access card -> user-forwarded OAuth token (sql scope)
+                               -> GRANT / REVOKE on fincrime.data_products
+                            -> app SP -> request rows in fincrime.catalog_manager.access_requests
 ```
 
 The Pages tab is a manual import handoff, not a Pages CRUD API or two-way sync.
@@ -50,7 +55,10 @@ Publication remains manual. Page citations can now be checked in Ask; the
 2026-10-28 live API check returned the Concentration of transfers Page definition
 and citation through the deployed app. Each MCP request uses the caller's token
 without app-SP fallback, shared clients, or a conversation cache. Metadata writes
-remain app-SP operations; a user-attributed change audit is not implemented.
+remain app-SP operations; a user-attributed change audit is not implemented for them.
+Access grants and revokes run with the signed-in approver's token
+([decision 0005](../decisions/0005-access-approvals-as-approver.md), proposed); the
+app SP only stores the request rows.
 See the [Pages workflow](../catalog-manager/README.md#discover-pages-workflow).
 
 ## Environments

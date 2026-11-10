@@ -6,3 +6,7 @@ env:
     valueFrom: sql-warehouse
   - name: DATABRICKS_WORKSPACE_ID
     value: "7474649527621307"
+  - name: SCHEMA_NAME
+    value: "data_products"
+  - name: GLOSSARY_SCHEMA_NAME
+    value: "gold"

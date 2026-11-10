@@ -23,3 +23,7 @@ Trade-offs, follow-ups.
 | # | Title | Status |
 |---|---|---|
 | 0001 | Single private GitHub repo plus GitHub Projects | accepted |
+| 0002 | Ask uses Genie One MCP with signed-in user identity | proposed (live app differs; HANDOVER action 8) |
+| 0003 | Governed-tag writes run as the app service principal | proposed |
+| 0004 | Catalog Manager uses a `data_products` schema, not the medallion layers | proposed |
+| 0005 | Access requests: approvals run as the approver, requests in a Delta table | proposed |

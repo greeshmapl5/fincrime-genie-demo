@@ -18,7 +18,7 @@ A demo where a bank investigator asks questions in plain English (Genie), gets a
 | Code, docs, dashboard export, Pages text, video plan | GitHub repo `greeshmapl5/fincrime-genie-demo` (private, personal account). A shared repo `Daiwt2026` is pending access |
 | Databricks workspace | Free Edition, owned by a personal account (AWS us-east-2) |
 | Lakebase project | `fincrime-source`, database `databricks_postgres`, branch `production` |
-| Unity Catalog | `fincrime` (bronze, silver, gold), `fincrime_source` (read-only window onto Lakebase) |
+| Unity Catalog | `fincrime` (bronze, silver, gold; `data_products` and `catalog_manager` for the Catalog Manager app), `fincrime_source` (read-only window onto Lakebase) |
 
 ## 3. Repo map
 
@@ -27,6 +27,7 @@ A demo where a bank investigator asks questions in plain English (Genie), gets a
 | `src/00_lakebase_case_decisions.sql` | Creates and seeds the decisions table. Run in the **Lakebase** SQL editor |
 | `src/01_generate_bronze_data.py` | Generates the fictional bank into `fincrime.bronze` (seeded, deterministic) |
 | `src/02_build_gold_data_products.py` | Builds gold tables and views, tags, and a verification cell |
+| `src/06_build_data_products.py` | Copies the gold data sets into `fincrime.data_products` (the schema Catalog Manager shows) as snapshot tables, plus `demo_sandbox` |
 | `docs/genie/` | Space instructions, example SQL, 22 benchmark questions, copy-paste version |
 | `pages/` | Five Pages texts and a publishing guide |
 | `dashboards/` | MLRO dashboard export (`.lvdash.json`) |

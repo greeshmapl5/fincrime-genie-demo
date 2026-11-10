@@ -1,12 +1,78 @@
 # HANDOVER
 
 > Keep this file current. Whoever (human or agent) ends a session updates it.
-> Last updated: 2026-11-06 — by Copilot (Ask Markdown tables)
+> Last updated: 2026-11-10 — by Copilot (Catalog Manager access requests, E1-S16)
 
 ## Project in one line
 Build the Databricks demo for our Summit booth (December 2026) and run the project with human + Claude agent collaboration.
 
 ## Status
+- **Catalog access requests (2026-11-10, deployed; E1-S16 in progress):** The
+  Catalog page has an **Access** card. Anyone signed in can request read access to
+  a data product for themselves or an account group, with a reason. Owners, MANAGE
+  holders and admins approve or reject requests, see who can read, and grant or
+  remove access directly; the table list shows them "n pending". Grants run as the
+  signed-in approver with their forwarded token (decision 0005, **proposed**); the
+  app SP only stores requests in the new schema `fincrime.catalog_manager` (the app
+  SP has `USE SCHEMA`, `CREATE TABLE`, `SELECT`, `MODIFY` there). 41 new tests (100
+  total), typecheck and build pass. Local API and browser cycles and a live API
+  cycle passed as the approver; the live approve proved grants run as the user,
+  because the app SP cannot grant. **Deployed** `01f1dcf437581a77b4e3c88730909ee4`
+  (7 files after a drift check; Ask files untouched). Original grants restored and
+  test requests deleted. **Open:** a second, non-owner user in the browser; readers
+  need `USE CATALOG` on `fincrime` (action 12); the preview still runs as the app SP.
+  **Not committed**: on `story/E1-S15-data-products-schema`; move to
+  `story/E1-S16-access-requests`.
+- **Catalog Manager availability (2026-11-10, verified):** The unavailable report
+  at 09:30:42 UTC coincided with startup. Live logs show runtime starting at
+  09:28:52 UTC, build success at 09:30:53 UTC and the server listening at
+  09:30:55 UTC. At 09:35 UTC, compute was `ACTIVE`, app `RUNNING` and deployment
+  `01f1dce939f619cf8d6fad1517e3a0a3` `SUCCEEDED`. Authenticated checks at
+  09:36 UTC (no redirects): `/health` 200 `{"status":"ok"}`, `/catalog` 200,
+  Catalog context 200 (`data_products`), tables 200 (9). Browser requires sign-in.
+  Retained system logs do not explain an earlier shutdown; do not claim quota
+  exhaustion or a 24-hour timeout as the confirmed cause. No restart, deployment,
+  code or permission change was needed in this verification. Evidence and
+  diagnostic commands are in [the runbook](docs/runbook.md#verified-availability-check-2026-11-10).
+  No implementation was added during the availability investigation; the
+  access-request feature was built afterwards (E1-S16 above).
+- **Data products schema (2026-11-09, deployed; E1-S15):** No medallion in the
+  demo. Created empty `fincrime.data_products` in dario-ws (owner: requester) and
+  granted the app SP `USE SCHEMA`, `SELECT`, `MODIFY`, `APPLY TAG` on it.
+  `bronze`/`silver`/`gold` untouched. Catalog Manager now defaults to
+  `SCHEMA_NAME=data_products` (labelled "Data products") and keeps the glossary in
+  `gold` via new `GLOSSARY_SCHEMA_NAME` (decision 0004, **proposed**); `app.yaml`
+  sets both. Catalog shows an empty-state message. 59 tests, typecheck and client
+  build pass; a local run against dario-ws showed the header, empty state and the
+  2 gold glossary terms. **Deployed** `01f1dc52bc1311ab9b060d683a47452e` after the app
+  was restarted: uploaded only `server/catalog.ts`, `server/catalog.test.ts`,
+  `CatalogPage.tsx` and `app.yaml` (live copies differed only by this story; verified
+  after upload; Ask/identity files untouched). Live context returns "Data products",
+  tables `[]`, glossary from gold; bundle has the empty state; Ask still
+  `app-service-principal`. **Not committed**: branch `story/E1-S15-data-products-schema`
+  was cut from the S11 branch with the uncommitted S11/S14 work, which shares
+  `catalog.ts`, `CatalogPage.tsx`, `app.yaml` and docs. **Data sets created
+  (2026-11-09):** new `src/06_build_data_products.py` copies `customer_360`,
+  `transactions`, `counterparties`, `case_notes`, `alerts`, `structuring_candidates`,
+  `counterparty_network` and `policy_docs` from gold as snapshot **tables** (gold
+  descriptions and tags copied; app tagging fails on views), plus fictional
+  `demo_sandbox` (3 rows) for live edits; demo docs now use it instead of
+  `smoke_test`. Ran on serverless: create, normal rerun (kept app edits) and
+  `reset_metadata = true` (restored gold metadata) all succeeded; row counts equal
+  gold; the live app lists all 9. Copies refresh only when 06 is rerun.
+- **Catalog governed tags (2026-11-06, deployed; E1-S14 blocked on a grant):**
+  Catalog has a **Governed tags** card. It lists table and column tags labelled
+  System / Governed / Free-form. It assigns `system.certification_status`, the
+  `Financial Crime` domain tag and `class.*` column tags; the table list marks
+  certified/deprecated tables. Writes run as the app service principal (decision
+  0003, **proposed**, chosen while the requester was unavailable). 28 new tests,
+  typecheck, focused lint and build pass; browser checks covered keyboard focus,
+  errors, empty states, 375 px and dark mode. Uploaded 8 files (hash-verified;
+  no Ask/identity files) and deployed `01f1d9f0254c1b6c84b98e3b3409636c`: RUNNING,
+  `/health` 200, Ask identity still `app-service-principal`, the service principal
+  reads 2 table and 113 `class.*` tag policies. **Live writes on `smoke_test`
+  return the app's 403 ASSIGN message for all three tag types; tags unchanged.**
+  An account admin must grant ASSIGN (runbook). Not committed yet.
 - **Ask Markdown tables (2026-11-06, deployed):** Genie One table answers (e.g.
   alerts by status, expected monthly volume) render as tables, not raw pipes.
   `client/src/pages/ask/AnswerMarkdown.tsx` adds `remark-gfm` 4.0.1 (exact pin),
@@ -154,10 +220,10 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 | E3 | Declarative Automation Bundles for new workspaces | Low |
 
 ## Next 3 steps
-1. E1-S13: a domain owner imports and publishes an exported term in Discover Pages.
-2. E1-S11: human-test the Ask UI, sign-in/consent and a second user.
-3. E1-S12: user-attributed metadata audit and edit authorization.
-(Stories are in `backlog/stories/`; split the S10/S11 commit before the PR.)
+1. E1-S15 and E1-S16: a human confirms decisions 0004 and 0005 and accepts the deployed Catalog (9 data products, Access card), including an access request from a second, non-owner user in the browser; commit `src/06_build_data_products.py` with E1-S15.
+2. E1-S13: a domain owner imports and publishes an exported term in Discover Pages.
+3. E1-S11: human-test the Ask UI, sign-in/consent and a second user.
+(Stories are in `backlog/stories/`; split the uncommitted S10/S11/S14/S15/S16 work into one PR per story.)
 
 ## Open actions / blockers
 | # | Item | Owner | Status |
@@ -170,8 +236,16 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 | 6 | Technical approach for E2 (sync, Change Data Feed, orchestration, simulating increments) | Architect | later |
 | 7 | Resolve `NO_AVAILABLE_PHAROS_DEPLOYMENTS` for the Agent Bricks Knowledge Assistant | PM + workspace administrator | blocked |
 | 8 | Choose the Ask identity model (app service principal live vs per-user in repo), then align source, workspace folder and docs | PM + architect | open |
+| 9 | Grant ASSIGN on `system.certification_status`, `Financial Crime` and needed `class.*` tags to `app-2a3ty8 catalog-manager` (UI, notebook `scripts/grant_governed_tag_assign.py` or `scripts/grant-governed-tag-assign.ps1`; both tested up to the admin-only permission read on 2026-11-09); confirm decision 0003 and E1-S14 criteria | Account admin (likely the Free Edition account owner) + PM | open |
+| 10 | Confirm decision 0004 (Catalog uses `data_products`, glossary stays in `gold`) and E1-S15 criteria | PM + architect | open |
+| 11 | Confirm decision 0005 (access grants run as the signed-in approver) and E1-S16 criteria; test a request with a second, non-owner user | PM + architect | open |
+| 12 | Grant readers `USE CATALOG` on `fincrime` (`` GRANT USE CATALOG ON CATALOG fincrime TO `account users` ``) or confirm they have it; approved readers cannot query without it | Catalog owner (Greeshma) or Dario (MANAGE) | open |
 
 ## Risks
+- Free Edition apps run for up to 24 hours after start/update/redeploy and may
+  also be affected by fair-usage limits. Capture status/logs before restarting;
+  check authenticated health before a demo. The 2026-11-10 earlier-stop cause is
+  not established.
 - Pages is account-level Beta; availability, domain access, import, and publication require
   verification by an authorized user. No PII, regulated data, or sensitive information
   may be included in exported Page content.
@@ -179,6 +253,9 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 - PM has little time → weekly digest must be short and decision-focused.
 - Dataset and workspace are undecided and block E1; current workspace also blocks Agent Bricks deployment.
 - E2 and E3 are low priority and may slip.
+- Two certification signals: free-form `certified=true` (set by `src/02_build_gold_data_products.py`) and the governed `system.certification_status`. Decide which one the demo uses.
+- `fincrime.data_products` holds snapshot copies: after rerunning `02` or changing investigator decisions in Lakebase, rerun `src/06_build_data_products.py`, or Catalog and Ask (which still reads gold) can show different alert statuses.
+- Catalog's 20-row preview runs as the app SP, so people without SELECT on a data product still see sample rows; access approvals only govern their own queries (decision 0005; follow-up with E1-S12).
 
 ## Key links
 - Repo: https://github.com/dariocapgemini-droid/Daiwt2026

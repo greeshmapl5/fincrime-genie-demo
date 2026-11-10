@@ -8,7 +8,68 @@ A Databricks App powered by [AppKit](https://developers.databricks.com/docs/appk
 
 Catalog automatically displays the configured catalog and schema when opened,
 including when there are no tables. `/api/catalog/context` supplies the server's
-`CATALOG_NAME` and `SCHEMA_NAME` values (defaults: `fincrime` and `gold`).
+`CATALOG_NAME` and `SCHEMA_NAME` values (defaults: `fincrime` and `data_products`)
+plus a display label (`data_products` → "Data products"). The glossary table lives
+in `GLOSSARY_SCHEMA_NAME` (default `gold`), where the Genie space reads it
+([decision 0004](../decisions/0004-data-products-schema.md)).
+
+## Catalog: governed tags
+
+The **Governed tags** card shows the selected object's table and column tags,
+labelled System, Governed (account tag policy) or Free-form. It can assign:
+
+- `system.certification_status` (Certified / Deprecated) and the key-only
+  `Financial Crime` domain tag on tables and views;
+- `class.*` data-classification tags on columns.
+
+Changes save immediately as the app service principal
+([decision 0003](../decisions/0003-governed-tag-writes-app-sp.md), proposed).
+An account admin must grant that principal **ASSIGN** on each tag; without it the
+card shows a 403 explaining the missing grant (see the
+[runbook](../docs/runbook.md)). Options come from `/api/2.1/tag-policies` (cached
+for 5 minutes); the server rejects other keys or values. Free-form tags such as
+`certified=true` are shown but not edited by this card; the existing
+Classification dropdown still sets the free-form `classification` tag.
+
+- `GET /api/catalog/governed-tags`, `GET /api/catalog/tables/:table/tags`
+- `PUT /api/catalog/tables/:table/governed-tags` with `{ column?, key, value }`
+  (`value` is `''` for key-only tags); `DELETE` with `?key=&column=`
+
+Validate with `npx vitest run server/catalog.test.ts client/src/pages/catalog/GovernedTagsCard.test.tsx`.
+
+## Catalog: access requests
+
+The **Access** card ([E1-S16](../backlog/stories/E1-S16-access-requests.md)) shows
+whether you can read the selected data product, and who owns it. Anyone signed in
+can request read access for themselves or an account group, with a reason, and
+cancel their own pending request. Owners, MANAGE holders and admins also see the
+requests to review (Approve, optionally for another principal, or Reject, with a
+note) and who can read the object, and can grant or remove access directly. They
+also see an "n pending" badge in the table list.
+
+Grants run **as the signed-in user**
+([decision 0005](../decisions/0005-access-approvals-as-approver.md), proposed). Each
+request builds a client from `x-forwarded-access-token` (`sql` scope), so Unity
+Catalog checks the approver's own rights. Approve and Grant run `GRANT USE SCHEMA`
+on the schema and `GRANT SELECT` on the table. Remove runs `REVOKE SELECT` on the
+table only, and cannot remove the app's own access. The app service principal only
+reads and writes request rows and lists groups.
+
+- Requests live in `<CATALOG_NAME>.<ACCESS_SCHEMA_NAME>.access_requests` (default
+  `fincrime.catalog_manager.access_requests`). The app creates the table; its service
+  principal needs `USE SCHEMA`, `CREATE TABLE`, `SELECT` and `MODIFY` on the schema.
+- Readers also need `USE CATALOG` on the catalog, which the app does not grant
+  (see the [runbook](../docs/runbook.md)).
+- `GET /api/catalog/access/groups`, `GET /api/catalog/access/pending`,
+  `GET /api/catalog/tables/:table/access`
+- `POST /api/catalog/tables/:table/access/requests` with `{ group?, reason }`
+- `POST /api/catalog/access/requests/:id/cancel`, `/approve` with
+  `{ grantee?, note? }`, `/reject` with `{ note? }`
+- `POST /api/catalog/tables/:table/access/grants` with `{ principal }`; `DELETE`
+  with `?principal=`. POST bodies must be JSON (otherwise 415).
+- Locally there is no Apps proxy, so the server acts as the CLI profile's user.
+
+Validate with `npx vitest run server/access.test.ts client/src/pages/catalog/AccessCard.test.tsx`.
 
 ## Ask: Genie One MCP
 

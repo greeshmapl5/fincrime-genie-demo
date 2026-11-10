@@ -37,6 +37,9 @@ Show in **3 minutes** that everything needed to record the video is in place: th
 | [E1-S11](../stories/E1-S11-genie-one-ask.md) | Ask via Genie One MCP with user identity | review |
 | [E1-S12](../stories/E1-S12-metadata-audit-and-authz.md) | Metadata audit and edit authorization | backlog |
 | [E1-S13](../stories/E1-S13-publish-pages-manually.md) | Verify manual Pages import and publish | backlog |
+| [E1-S14](../stories/E1-S14-governed-tags-in-catalog.md) | Show and assign governed tags in Catalog Manager | blocked |
+| [E1-S15](../stories/E1-S15-data-products-schema.md) | Data products schema for Catalog Manager (no medallion) | in-progress |
+| [E1-S16](../stories/E1-S16-access-requests.md) | Request and approve access to data products in Catalog Manager | in-progress |
 
 Other E1 stories (dataset, Lakebase, catalogs, dashboard) are still to be defined.
 

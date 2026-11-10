@@ -62,8 +62,14 @@ flowchart TD
     GO --> PG["Accessible published Discover Pages"]
     UI --> C["Catalog / Glossary API"]
     C -->|"App service principal via Statement Execution API"| W["Configured SQL warehouse"]
+    C -->|"App service principal: tag-policies REST API"| TP["Account governed tag policies"]
     W --> M["Unity Catalog metadata: information_schema, comments, tags"]
-    W --> T["fincrime.gold tables/views and business_glossary"]
+    W --> T["fincrime.data_products tables/views; glossary in fincrime.gold"]
+    UI --> AC["Access API: requests and approvals"]
+    P -. "Forwarded signed-in user token" .-> AC
+    AC -->|"Signed-in user: GRANT / REVOKE / SHOW GRANTS"| W
+    AC -->|"App service principal: request rows"| W
+    W --> R["fincrime.catalog_manager.access_requests"]
     UI --> E["Prepare Pages export: browser-generated document"]
     E -. "Manual handoff" .-> H["Human import, review and publication in Discover"]
     H --> PG
@@ -79,12 +85,13 @@ claim the Genie One service is forced to use that same warehouse or one space.
 |---|---|---|
 | Ask / poll Genie One | Signed-in user's forwarded OAuth token | Their service, domain and data permissions apply. No app-service-principal fallback. |
 | List Catalog objects, preview rows, change comments/tags | App service principal through `WorkspaceClient` | The view and allowed changes reflect app identity, not per-user data filtering. |
+| Request access; approve, reject, grant or remove read access | Signed-in user's forwarded token for `GRANT`/`REVOKE` and the read/manage checks; the app service principal only stores request rows | Unity Catalog checks each grant as the approver, so only owners, MANAGE holders and admins can approve ([decision 0005](../decisions/0005-access-approvals-as-approver.md)). |
 | Read/write/delete Glossary terms | App service principal | No authenticated per-user author attribution is captured by this app. |
 | Prepare export | Browser, using glossary rows read by the backend | No Discover Page is created. |
 | Publish a Page | Human performing the workspace action | Requires their publication/domain rights. |
 
 Say:
-> "Ask preserves the caller's identity. Metadata editing currently uses app
+> "Ask and access approvals preserve the caller's identity. Metadata editing currently uses app
 > identity. That is a prototype boundary we need to address before broad production use."
 
 App logs are operational diagnostics, not a complete business audit trail.
@@ -102,6 +109,9 @@ before the app runs. The app does not run those notebooks when a user opens it.
   comments and checks for the planted investigation story.
 - Gold tables include `customer_360`, `transactions`, `counterparties` and `case_notes`.
 - Views include `alerts`, `structuring_candidates`, `counterparty_network` and `data_as_of`.
+- [Data products](../src/06_build_data_products.py): copies the gold data sets
+  (and `policy_docs`) into `fincrime.data_products` as snapshot tables, plus
+  `demo_sandbox`. This is the schema Catalog shows.
 - [Policy preparation](../src/03_policy_docs.py): fictional policy sections in
   `fincrime.gold.policy_docs`, not a live PDF retrieval service.
 - [Glossary-space setup](../src/05_genie_glossary_space.py): separately adds the
@@ -199,8 +209,14 @@ in the UI, not the server-side Genie operation. For a rehearsed chart, follow
 
 ### 7:00-11:00 | Catalog: improve metadata at its source
 
-**Show:** Catalog, a table's columns, classification and 20-row preview.
-For writes, use the existing `smoke_test` sandbox, not customer business tables.
+**Show:** Catalog, a table's columns, classification, governed tags and 20-row preview.
+For writes, use the `demo_sandbox` table, not customer business tables.
+
+> **Update 2026-11-09 (E1-S15):** Catalog now browses `fincrime.data_products`
+> ("Data products"): snapshot copies of the gold data sets plus `demo_sandbox`.
+> `gold.smoke_test` is no longer listed. To restore the sandbox and all
+> descriptions and tags, run `src/06_build_data_products.py` with
+> `reset_metadata = true`.
 
 **Before editing:** Capture its existing description and classification privately
 so they can be restored. Ensure no other teammate is editing that object.
@@ -210,16 +226,28 @@ so they can be restored. Ensure no other teammate is editing that object.
 Set the sandbox classification to **Internal**, noting the immediate save.
 Open the same object in Catalog Explorer and refresh to show the persisted metadata.
 
+**Governed tags:** Open the **Governed tags** card on `customer_360` to point out the
+System / Governed / Free-form labels: the copied `certified=true` is free-form,
+while `system.certification_status` is a Databricks system tag with fixed values.
+Make changes on `demo_sandbox` only. If the runbook's ASSIGN grant is in place, set Certification to **Certified**,
+show the ✓ marker in the table list, then set it back to **Not set**. Without
+the grant, the card explains the missing ASSIGN permission; present that as the
+governance boundary, not a crash.
+
 **Say:**
 > "These are real catalog comments and tags, not labels stored only in this UI.
 > Descriptions help people understand the data and can supply context to tools.
-> Classification records an intent; enforcement needs a separate policy."
+> Classification records an intent; enforcement needs a separate policy.
+> Governed tags are defined once for the account; the app offers only what the
+> policy allows."
 
 **Behind the scenes:**
 - Table/column lists query Unity Catalog `information_schema` and tag metadata.
 - Preview is a read of up to 20 rows, not a complete dataset download.
 - Description writes use `COMMENT ON TABLE` or `COMMENT ON COLUMN`.
 - Classification uses `SET TAGS` / `UNSET TAGS`; the dropdown saves immediately.
+- Governed tag options come from the account tag-policy API; assigning one also
+  needs ASSIGN on that tag ([decision 0003](../decisions/0003-governed-tag-writes-app-sp.md), proposed).
 - All these operations go through the Statement Execution API and warehouse
   under the app service principal.
 
@@ -227,7 +255,27 @@ Open the same object in Catalog Explorer and refresh to show the persisted metad
 audit/authorization feature openly. Do not claim a before/after answer improvement
 unless the exact change has been rehearsed and the changed answer is observed.
 
-**Cleanup:** Restore the exact previous sandbox description/tag after the walkthrough.
+**Cleanup:** Restore the exact previous sandbox description and tags (including
+any governed tag) after the walkthrough.
+
+**Access requests ([E1-S16](../backlog/stories/E1-S16-access-requests.md)):** On `demo_sandbox`,
+open the **Access** card and request read access for the group `daiwt2026` with a reason.
+Approvers see "1 pending" in the table list. Under **Requests to review**, **Approve** it,
+then show the grant in Catalog Explorer › `demo_sandbox` › Permissions.
+
+**Say:**
+> "Anyone can ask for access, with a reason. The approval runs as the approver, so
+> Unity Catalog decides whether they may grant it, and the grant is made in their name."
+
+**Behind the scenes:** Approve runs `GRANT USE SCHEMA` and `GRANT SELECT` with the
+approver's forwarded token; the app service principal cannot grant. Requests are rows
+in `fincrime.catalog_manager.access_requests`. The 20-row preview still runs as the
+app service principal, so do not present it as per-user filtering. Audit records for
+these grants have not been checked (that needs `system.access` rights).
+
+**Cleanup:** Under **Who can read this data product**, **Remove** `daiwt2026`. Remove
+leaves `USE SCHEMA`, so also run
+`` REVOKE USE SCHEMA ON SCHEMA fincrime.data_products FROM `daiwt2026` ``.
 
 ### 11:00-14:00 | Glossary: draft the team's business language
 
@@ -319,7 +367,9 @@ that is expected, not a missing query.
 | Entry point | [server.ts](../catalog-manager/server/server.ts) | AppKit `analytics()` and `server()` plugins; custom route registration |
 | MCP bridge | [genie-one.ts](../catalog-manager/server/genie-one.ts) | Forwarded caller token, fresh MCP client per request, fixed service URL, ask/poll allowlist, no SP fallback |
 | Response validation | [shared/genie-one.ts](../catalog-manager/shared/genie-one.ts) | Zod request and response contracts |
-| Metadata and glossary | [catalog.ts](../catalog-manager/server/catalog.ts) | App SDK credentials; Statement Execution API; UC comments/tags versus glossary rows |
+| Metadata and glossary | [catalog.ts](../catalog-manager/server/catalog.ts) | App SDK credentials; Statement Execution API; UC comments/tags versus glossary rows; tag-policy allow-list |
+| Governed tags | [GovernedTagsCard.tsx](../catalog-manager/client/src/pages/catalog/GovernedTagsCard.tsx) | System / Governed / Free-form labels, policy-driven options, immediate saves, ASSIGN message |
+| Access requests | [AccessCard.tsx](../catalog-manager/client/src/pages/catalog/AccessCard.tsx), [access.ts](../catalog-manager/server/access.ts) | Request form, approver lists, grants run with the signed-in user's token, app service principal only for request rows |
 | Export generation | [pages-export.ts](../catalog-manager/client/src/pages/pages/pages-export.ts) | Selected-term Markdown and proposed import prompt, no Pages API call |
 | Publication guidance | [PagesPage.tsx](../catalog-manager/client/src/pages/pages/PagesPage.tsx) | Review checkbox, download and manual handoff |
 | Runtime configuration | [app.yaml](../catalog-manager/app.yaml) | Start command, host, workspace ID and warehouse resource mapping |
@@ -386,8 +436,14 @@ from section 2; no animated claims about unimplemented integrations.
   shared identity to disguise failure.
 - [ ] Confirm the Page citation opens for the presenter and intended audience.
 - [ ] Inspect current seed results/date; do not rerun data generators blindly.
-- [ ] Confirm the sandbox exists, record its original metadata and coordinate
+- [ ] Confirm `demo_sandbox` exists (or run `src/06_build_data_products.py` with
+  `reset_metadata = true`), record its original metadata and coordinate
   with teammates. A tag change persists immediately.
+- [ ] If showing governed-tag changes, confirm the app service principal has
+  ASSIGN ([runbook](runbook.md)); otherwise show the tags read-only.
+- [ ] If showing access requests, confirm `demo_sandbox` has no pending request and
+  no `daiwt2026` grant, and that the approving presenter owns the table or holds
+  MANAGE. Readers also need `USE CATALOG` on `fincrime` ([runbook](runbook.md)).
 - [ ] Check the actual Discover import UI and domain publishing permissions if
   demonstrating publication; otherwise use the declared pre-published fallback.
 - [ ] Agree which limitations are visible in the team session versus summarized
@@ -399,6 +455,7 @@ from section 2; no animated claims about unimplemented integrations.
 |---|---|
 | Ask 403 | Explain per-user authorization failure; use a previously captured, labelled example. Do not claim all-user acceptance. |
 | Long-running answer | Explain asynchronous polling; move to Catalog and return later, or use a labelled recording. |
+| Access 403 "Databricks refused this for your account" | The presenter cannot grant on that table. Present it as the governance boundary; approve as the table owner. |
 | Wrong source / result | Inspect SQL/source; add the specific data product and time context. Acknowledge the failed response rather than editing the meaning live. |
 | No chart | Use the text/SQL evidence. Show workspace visualization only if previously verified. |
 | Pages import unavailable | Show reviewed export and pre-published Page, explicitly separating the two steps. |
@@ -407,6 +464,8 @@ from section 2; no animated claims about unimplemented integrations.
 ### After the session
 
 - [ ] Restore sandbox metadata to its captured original state.
+- [ ] Remove rehearsal access grants (Access card › Remove, then revoke `USE SCHEMA`
+  from the group).
 - [ ] Delete only the temporary glossary term created for rehearsal.
 - [ ] Do not delete shared Pages or published definitions without owner approval.
 - [ ] Capture actual outputs, discrepancies and which user was tested in the
@@ -434,6 +493,11 @@ Page and its actual citation instead.
 
 **Does selecting PII mask the data?** Not by itself. A tag is metadata; a matching
 enforcement policy must be configured separately.
+
+**Can the app certify tables or apply governed tags?** Yes for
+`system.certification_status`, the `Financial Crime` domain tag and `class.*`
+column tags, once an account admin grants the app service principal ASSIGN on
+them (not granted as of 2026-11-06). Changes are attributed to the service principal.
 
 **Can we show who edited a definition?** Not as a verified human audit trail
 today. Glossary owner and updated time are not authenticated edit history.
