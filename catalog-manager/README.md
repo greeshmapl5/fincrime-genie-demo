@@ -6,25 +6,36 @@ A Databricks App powered by [AppKit](https://developers.databricks.com/docs/appk
 - **Analytics** -- SQL query execution against Databricks SQL Warehouses
 - **Server** -- Express HTTP server with static file serving and Vite dev mode
 
-## Ask: Genie space MCP
+Catalog automatically displays the configured catalog and schema when opened,
+including when there are no tables. `/api/catalog/context` supplies the server's
+`CATALOG_NAME` and `SCHEMA_NAME` values (defaults: `fincrime` and `gold`).
 
-Ask calls the Genie Agent MCP endpoint `/api/2.0/mcp/genie/{space_id}`, scoped to
-the Investigations Analyst space only. The space ID comes from the app's
-`genie-space` resource (`DATABRICKS_GENIE_SPACE_ID`); callers cannot pick another
-space. It does not read Discover Pages (use Genie One for that). The backend creates
+## Ask: Genie One MCP
+
+The UI uses a shared blue brand theme with light/dark variants, icon-labelled
+navigation, keyboard focus outlines, and a skip-to-content link. The home page
+links to each workflow. Ask offers editable starter questions, readable progress
+labels, and formatted answers while keeping caller identity, SQL inspection and
+the AI verification reminder visible. Answer Markdown supports GFM tables via
+`remark-gfm`: all-numeric columns are right-aligned and wide tables scroll inside
+a keyboard-focusable region. Starter questions populate the composer;
+they never submit a query automatically.
+
+Ask calls `/ai-gateway/mcp-services/system.ai.genie_one_mcp?o=<workspace-id>`,
+using `DATABRICKS_HOST` and `DATABRICKS_WORKSPACE_ID`. It is no longer restricted
+to Investigations Analyst: Genie One can use the caller's accessible data and
+published Discover Pages. Identical workspace answers are not guaranteed because
+conversation context and generation can differ. The backend creates
 one MCP client per request from the Apps proxy's `x-forwarded-access-token` and
 requires `x-forwarded-user`. There is no service-principal fallback or conversation cache.
 
-- Declare `user_api_scopes: [sql, dashboards.genie, genie]`; the MCP endpoint
-  requires the `genie` scope. Users must re-consent in a browser after the scopes
-  change, otherwise the forwarded token lacks `genie` and Ask returns 403.
-- Users need CAN RUN on the Genie space and access to its data.
+- Declare `user_api_scopes: [sql, ai-gateway]`. Users must re-consent in a browser
+  after scopes change; an old forwarded token can otherwise cause HTTP 403.
+- Users need EXECUTE on `system.ai.genie_one_mcp` and access to the relevant domains/data.
 - `GET /api/ask/identity` displays the caller, never the token.
 - `POST /api/ask` allows only ask and poll. Follow-ups reuse the conversation ID.
 - The tool is read-only and returns text, SQL and suggested questions.
-- The endpoint is not governed by Unity Gateway (no grants, policies or tracing).
-  The Beta endpoint without a space ID is deprecated (end of life 2026-11-30); the
-  space-scoped endpoint is not named in that notice, but confirm before the Summit.
+- Uses the Unity Gateway service, not the deprecated space-less Beta Genie MCP.
 - Standalone local development deliberately rejects Ask without trusted caller
   headers. Use a deployed Apps proxy for real user-identity validation; never
   expose a local server that trusts arbitrary forwarded headers to untrusted users.

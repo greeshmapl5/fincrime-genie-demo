@@ -1,12 +1,120 @@
 # HANDOVER
 
 > Keep this file current. Whoever (human or agent) ends a session updates it.
-> Last updated: 2026-10-28 — by Copilot (Genie One MCP migration)
+> Last updated: 2026-11-06 — by Copilot (Ask Markdown tables)
 
 ## Project in one line
 Build the Databricks demo for our Summit booth (December 2026) and run the project with human + Claude agent collaboration.
 
 ## Status
+- **Ask Markdown tables (2026-11-06, deployed):** Genie One table answers (e.g.
+  alerts by status, expected monthly volume) render as tables, not raw pipes.
+  `client/src/pages/ask/AnswerMarkdown.tsx` adds `remark-gfm` 4.0.1 (exact pin),
+  right-aligns all-numeric columns, keeps links HTTPS-only (`safe-link.ts`) and
+  wraps wide tables in a keyboard-scrollable region. Three render tests, typecheck,
+  focused lint and client build pass; a preview with two captured live answers was
+  checked at desktop, 375 px, dark mode and keyboard focus. Deployed without
+  changing identity: the live service-principal `AskPage.tsx` was patched only to
+  use the renderer, and that exact folder state was built locally before uploading
+  six files (no Page source cards or per-user files). Deployment
+  `01f1d9d10df31837a50398b65153ecf7` SUCCEEDED; app RUNNING, `/health` 200,
+  identity still `app-service-principal`, the bundle contains the renderer, and a
+  live question returned a completed table answer. Users must reload the app.
+- **Ask identity mismatch found (2026-11-05, decision needed):** Live Ask runs
+  Genie One as the **app service principal** (`/api/ask/identity` returns
+  `mode: app-service-principal`). That version was uploaded to the workspace source
+  folder and deployed at 10:41 UTC (`01f1d905…`); later deployments, including a
+  teammate's unchanged 2026-11-06 08:59 UTC redeploy, kept it. Local `server/genie-one.ts`,
+  `shared/genie-one.ts` and `AskPage.tsx` are the per-user (on-behalf-of) version,
+  as are README, decision 0002 and `docs/summit-team-demo.md`. Do not deploy the
+  identity files from either side until a human chooses the identity model;
+  identity-neutral Ask fixes are patched onto the live `AskPage.tsx` (see above).
+- **Discover Page source cards (2026-11-05, local only, not deployed):** Ask lists
+  the Discover Pages cited in each answer as cards linking to the Page
+  (`client/src/pages/ask/page-citations.ts`, 3 tests). Genie One MCP has no tool to
+  list Pages, and the beta `domains` CLI API manages only domain metadata, so the
+  app still cannot list every workspace Page. Held back because of the identity
+  mismatch above.
+- **Catalog location header (2026-11-05):** Catalog automatically displays catalog
+  and schema from `/api/catalog/context`, independently of table selection/rows,
+  with loading and error states. Two context tests, typecheck and client build
+  pass. Only Catalog UI/server files deployed; deployment SUCCEEDED and live
+  context returned `fincrime` / `gold`; `/catalog` HTTP 200 and new bundle verified.
+  Ask implementation was not edited or uploaded.
+- **Team/Summit presenter guide prepared (2026-11-05):** See
+  `docs/summit-team-demo.md` for a 20-minute show/say/explain walkthrough,
+  architecture and identity flows, code tour, 3-minute video storyboard,
+  preflight/reset steps and Q&A. Corrects the supplied screenshot's obsolete
+  single-space Ask, chart and per-user audit claims. Grounded in current source;
+  no new live data or second-user acceptance was performed for this documentation.
+  Next: rehearse exact prompts and current counts, resolve second-user access,
+  then obtain human approval of recorded claims.
+- **Pages label clarified (2026-11-05):** Navigation (desktop/mobile), home card,
+  page heading and glossary link now say "Prepare Pages export". Route remains
+  `/pages`; export behavior is unchanged. Client build passed; deployment
+  `01f1d907ffa11ba29b6586f0a38f951c` SUCCEEDED, authenticated `/pages` HTTP 200,
+  and new label verified in deployed JavaScript. Only the three UI files uploaded.
+- **Workspace-wide Ask access check (2026-11-05):** User requires Ask for every
+  workspace user while retaining caller identity. App ACL already includes the
+  workspace `users` group (CAN_MANAGE; broader than query-only access, unchanged).
+  Effective grants on `system.ai.genie_one_mcp` already include EXECUTE for
+  `account users`, inherited from `system.ai`; do not assume the second user's
+  403 means a missing service EXECUTE grant. Parent catalog/schema grant inspection
+  was denied (READ METADATA), and group inspection requires admin. Per-user OAuth
+  consent and parent/domain/data access remain to verify with the affected user
+  and administrator. No access grants were changed or identities bypassed.
+- **Ask switched back to Genie One (2026-11-05):** User approved removing the
+  single-space restriction. `server/genie-one.ts` now calls `genie_ask` and
+  `genie_poll_response` on `system.ai.genie_one_mcp` with each caller's forwarded
+  token; no app-SP fallback. Preserves SQL, citations, partial status and deep links.
+  Live user scopes are now `sql`, `ai-gateway`; resources preserved. Deployment
+  `01f1d8fea26a1ffca321359b333c66ce` SUCCEEDED. Health and identity HTTP 200;
+  identity reports Genie One and on-behalf-of-user. Initial HTTP 403 cleared on
+  retry at 09:56 UTC: authenticated requests through the deployed Apps proxy
+  completed conversation `f3c2df5e96d244f9b8a867b466a01984` and cited the published
+  Concentration of transfers Page with its 14-day / largest-recipient / 0.94 = 94%
+  definition. Browser UI sign-in and second-user checks remain separate follow-ups.
+  Separately, a loopback-only run of the migrated route with the real user CLI OAuth
+  token completed and cited published Page `901ecc5d-b8ea-4997-a022-305bdec418f5`,
+  including the 14-day / largest-recipient / 0.94 = 94 percent definition.
+  The loopback check proves MCP/route compatibility; the subsequent deployed
+  proxy test above verifies actual app-to-MCP caller-token access.
+  Typecheck, 23 tests, server/client builds and focused lint pass (existing
+  index-key warning). See decision 0002 and E1-S11; second-user testing remains open.
+- **UI refresh deployed (2026-11-05):** Shared blue light/dark theme, icon-labelled
+  navigation, clearer home workflow cards, keyboard focus/skip link, and friendlier
+  Ask starter questions, progress labels, markdown and composer. Catalog explains
+  immediate classification saves; Glossary/Pages share the accent styling. No MCP,
+  permissions or backend changes. Only six changed UI files were uploaded to the
+  existing workspace source (no full local sync). Deployment
+  `01f1d8fb646610178e8dc0d3e3784a61` SUCCEEDED; app RUNNING, authenticated home and
+  health HTTP 200, refreshed home/Ask text verified in the deployed JS bundle.
+  Typecheck, 24 tests and client production build pass. Focused App/Ask ESLint has
+  no errors (existing index-key warning); broader page lint still reports existing
+  Catalog/Glossary unsafe JSON and async-handler issues. Controlled-response browser
+  checks passed starter/focus, polling/answer/SQL/identity, 403 display, reset,
+  mobile navigation and dark mode without horizontal overflow. These checks do
+  not establish real Genie query acceptance; browser re-consent remains to verify.
+- **App availability restored (2026-11-05):** Redeployed the existing workspace
+  source without syncing local files or changing permissions. Deployment
+  `01f1d8fa003811ac9b03c8d83e179e8d` SUCCEEDED at 09:21 UTC; app RUNNING,
+  compute ACTIVE. Authenticated `/health` returned HTTP 200 `{"status":"ok"}`;
+  `/` returned HTTP 200. The earlier failure's exact cause remains unconfirmed:
+  retry succeeded without an ACL change, so the missing explicit source-folder
+  grant alone did not establish the cause. Ask and full UI acceptance were not retested.
+- **App availability investigation (2026-11-05):** Catalog Manager's public URL
+  responds with HTTP 302 to Databricks sign-in, but authenticated requests return
+  502 in runtime logs. After OAuth reauthentication, CLI confirmed compute ACTIVE,
+  app UNAVAILABLE: deployment `01f1d8f6b53b15769201a516136a5038` failed at
+  08:55 UTC with "Error downloading source code ... no files found".
+  The original workspace source folder still contains files; the failure references
+  its app-owned deployment snapshot. Check snapshot/source permissions and retry
+  deployment from the verified source; missing files versus permissions is not yet
+  distinguished. Source folder ACL (directory `958251023971296`) shows only the
+  owner's inherited CAN_MANAGE and the admins group's inherited CAN_MANAGE; no
+  explicit app service-principal grant appears. Verify effective access and grant
+  CAN_READ on the source folder if needed before retrying deployment.
+  No restart, permission change, or deployment was performed.
 - **Ask limited to the Genie space via MCP (2026-10-29):** Branch `story/E1-S11-genie-one` now
   uses the Genie Agent MCP `/api/2.0/mcp/genie/{space_id}` as the signed-in user, restricted to
   the Investigations Analyst space (Genie One was tried first and replaced; it is not space-scoped
@@ -61,6 +169,7 @@ Build the Databricks demo for our Summit booth (December 2026) and run the proje
 | 5 | Set up Teams channel + GitHub app notifications | PM | open |
 | 6 | Technical approach for E2 (sync, Change Data Feed, orchestration, simulating increments) | Architect | later |
 | 7 | Resolve `NO_AVAILABLE_PHAROS_DEPLOYMENTS` for the Agent Bricks Knowledge Assistant | PM + workspace administrator | blocked |
+| 8 | Choose the Ask identity model (app service principal live vs per-user in repo), then align source, workspace folder and docs | PM + architect | open |
 
 ## Risks
 - Pages is account-level Beta; availability, domain access, import, and publication require

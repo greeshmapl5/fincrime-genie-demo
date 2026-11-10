@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@databricks/appkit-ui/react';
+import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@databricks/appkit-ui/react';
+import { z } from 'zod';
 
 type Row = Record<string, string | null>;
+const catalogContextSchema = z.object({ catalog: z.string().min(1), schema: z.string().min(1) });
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -80,6 +82,8 @@ function ClassificationSelect({
 }
 
 export function CatalogPage() {
+  const [context, setContext] = useState<z.infer<typeof catalogContextSchema> | null>(null);
+  const [contextError, setContextError] = useState<string | null>(null);
   const [tables, setTables] = useState<Row[]>([]);
   const [levels, setLevels] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
@@ -95,6 +99,17 @@ export function CatalogPage() {
     noticeTimer.current = setTimeout(() => setNotice(null), 3000);
   };
   const loadTables = () => api<Row[]>('/api/catalog/tables').then(setTables).catch((e) => setError(e.message));
+  useEffect(() => {
+    const controller = new AbortController();
+    void api<unknown>('/api/catalog/context', { signal: controller.signal })
+      .then((body) => {
+        if (!controller.signal.aborted) setContext(catalogContextSchema.parse(body));
+      })
+      .catch((cause: unknown) => {
+        if (!controller.signal.aborted) setContextError(cause instanceof Error ? cause.message : 'Could not load catalog and schema.');
+      });
+    return () => controller.abort();
+  }, []);
   useEffect(() => {
     void loadTables();
     api<string[]>('/api/catalog/classification-levels').then(setLevels).catch(() => undefined);
@@ -147,10 +162,24 @@ export function CatalogPage() {
   const previewCols = preview[0] ? Object.keys(preview[0]) : [];
 
   return (
+    <div className="space-y-4">
+      <section aria-label="Catalog location" className="rounded-xl border border-primary/20 bg-accent p-5 space-y-2">
+        <h2 className="text-2xl font-semibold">Catalog</h2>
+        {context ? (
+          <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+            <div><dt className="text-muted-foreground">Catalog</dt><dd className="font-semibold break-all">{context.catalog}</dd></div>
+            <div><dt className="text-muted-foreground">Schema</dt><dd className="font-semibold break-all">{context.schema}</dd></div>
+          </dl>
+        ) : contextError ? (
+          <p role="alert" className="text-sm text-destructive">Could not load catalog location: {contextError} Reload the page to retry.</p>
+        ) : (
+          <div role="status" aria-label="Loading catalog and schema"><Skeleton className="h-10 w-48" /></div>
+        )}
+      </section>
     <div className="grid md:grid-cols-[260px_1fr] gap-4">
-      <Card>
+      <Card className="border-t-4 border-t-primary/50 self-start">
         <CardHeader>
-          <CardTitle>Tables</CardTitle>
+          <CardTitle>Explore the catalog</CardTitle>
         </CardHeader>
         <CardContent className="space-y-1">
           {tables.map((t) => (
@@ -171,13 +200,17 @@ export function CatalogPage() {
       </Card>
 
       <div className="space-y-4">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p role="alert" className="text-sm text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-3">{error}</p>}
         {notice && (
-          <p role="status" className="text-sm text-green-700">
+          <p role="status" className="text-sm text-foreground rounded-lg border border-success/40 bg-success/10 p-3">
             ✓ {notice}
           </p>
         )}
-        {!selected && <p className="text-muted-foreground">Select a table to view and edit its metadata.</p>}
+        {!selected && <div className="rounded-xl border border-primary/20 bg-accent p-6 space-y-2">
+          <h2 className="text-2xl font-semibold">Give your data context</h2>
+          <p className="text-muted-foreground">Select a table or view to explore its columns and preview its data.</p>
+          <p className="text-sm text-muted-foreground">Descriptions use the Save button. Classification changes save immediately.</p>
+        </div>}
         {selected && (
           <>
             <Card>
@@ -256,6 +289,7 @@ export function CatalogPage() {
           </>
         )}
       </div>
+    </div>
     </div>
   );
 }

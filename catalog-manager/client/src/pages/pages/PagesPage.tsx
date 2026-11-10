@@ -60,8 +60,8 @@ export function PagesPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Discover Pages</h2>
+      <div className="rounded-xl border border-primary/20 bg-accent p-6 space-y-2">
+        <h2 className="text-3xl font-semibold">Prepare Pages export</h2>
         <p className="text-sm text-muted-foreground">
           Prepare glossary definitions for reviewed import into Databricks Discover. This is a manual handoff, not live
           Pages browsing, automatic publishing, or two-way synchronization.
@@ -228,8 +228,9 @@ export function PagesPage() {
             their owner.
           </p>
           <p>
-            Catalog Manager&apos;s Ask tab is limited to the Investigations Analyst Genie space and does not read
-            Pages; verify Pages in Databricks Genie One. This export workflow does not publish them. Editing a
+            Catalog Manager&apos;s Ask tab now uses Genie One MCP with your permissions, so you can also verify
+            published Page definitions there. Pages cited by an answer appear as source cards below it; Ask cannot list
+            every workspace Page. This export workflow does not publish them. Editing a
             glossary term later requires a separate review and update of its Page.
           </p>
         </CardContent>

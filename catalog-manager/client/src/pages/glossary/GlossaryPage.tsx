@@ -50,7 +50,7 @@ export function GlossaryPage() {
 
   return (
     <div className="grid md:grid-cols-[320px_1fr] gap-4">
-      <Card>
+      <Card className="border-t-4 border-t-primary/50 self-start">
         <CardHeader>
           <CardTitle>Add or update a term</CardTitle>
         </CardHeader>
@@ -63,7 +63,7 @@ export function GlossaryPage() {
           <Button onClick={save} disabled={!form.term || !form.definition}>
             Save to lakehouse
           </Button>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         </CardContent>
       </Card>
       <Card>
@@ -73,11 +73,11 @@ export function GlossaryPage() {
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
             Saving here updates the lakehouse glossary, not Discover Pages.{' '}
-            <NavLink to="/pages" className="underline">Prepare terms for Pages import</NavLink>.
+            <NavLink to="/pages" className="underline">Prepare Pages export</NavLink>.
           </p>
           {rows.length === 0 && <p className="text-muted-foreground text-sm">No terms yet.</p>}
           {rows.map((r) => (
-            <div key={r.term} className="border-b pb-2 flex justify-between gap-4">
+            <div key={r.term} className="rounded-lg border bg-accent/30 p-3 flex justify-between gap-4">
               <div>
                 <div className="font-medium">{r.term}</div>
                 <div className="text-sm">{r.definition}</div>

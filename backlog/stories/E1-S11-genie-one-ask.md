@@ -1,7 +1,7 @@
 ---
 id: E1-S11
 epic: E1
-title: Ask via Genie space MCP with user identity
+title: Ask via Genie One MCP with user identity
 status: review
 priority: must
 estimate: 5
@@ -11,20 +11,24 @@ issue: "#"
 ---
 
 ## User story
-As a **demo attendee**, I want **Ask to use an MCP limited to the Investigations Analyst Genie space, as my own identity**, so that **answers come only from that space and respect my permissions**.
+As a **demo attendee**, I want **Ask to use Genie One MCP as my own identity**, so that **answers use my accessible data and published business definitions, with context comparable to workspace Genie One**.
 
 ## Context
-Decision 2026-10-29: Ask must be limited to the Genie space we built, so it uses the Genie Agent MCP `/api/2.0/mcp/genie/{space_id}` (scope `genie`) instead of Genie One (`system.ai.genie_one_mcp`, workspace-wide and Page-grounded; proven earlier on commit `5f705c0`). The space-less Beta endpoint ends 2026-11-30; the space-scoped endpoint is not named in that notice (confirm with Databricks).
+Decision 2026-11-05: user approved removing the single-space restriction and
+returning to `system.ai.genie_one_mcp`, preserving signed-in identity. This
+supersedes the 2026-10-29 space-scoped choice. Identical answers are not guaranteed.
 
 ## Acceptance criteria
-- [x] Ask calls only the configured space's MCP with the caller's token; no service-principal fallback; caller cannot choose another space.
-- [x] The space MCP returns answer text and SQL in the shape the app maps (checked with a real call: alerts by status).
-- [x] Typecheck and 24 tests pass; deployed to dario-ws.
-- [ ] Deployed app answers a question for a signed-in browser user. Blocked: forwarded token lacks the `genie` scope until the user re-consents (403 "required scopes: genie").
-- [ ] A second, non-owner user with CAN RUN can use Ask.
+- [x] Ask targets Genie One MCP with the caller's token, without service-principal fallback or single-space restriction.
+- [x] Tests preserve answer citations, SQL, links and partial statuses.
+- [x] Authenticated ask/poll through the deployed Apps proxy completed with the
+  published Concentration of transfers Page citation (2026-11-05).
+- [ ] Deployed app answers a question for a signed-in browser user after ai-gateway consent.
+- [ ] A second, non-owner user with service/domain/data access can use Ask.
 
 ## Technical notes
-User scopes `sql`, `dashboards.genie`, `genie`. `DATABRICKS_HOST` is set in `app.yaml`. The endpoint bypasses Unity Gateway. Dependency audit shows 34 advisories; none force-fixed.
+User scopes `sql`, `ai-gateway`. `DATABRICKS_HOST` and `DATABRICKS_WORKSPACE_ID`
+are set in `app.yaml`. Each request creates and closes a caller-isolated MCP client.
 
 ## Definition of Done
 - [ ] Acceptance criteria met and demonstrated

@@ -32,6 +32,10 @@ async function run(statement: string, parameters: Param[] = []): Promise<Record<
 const quoteComment = (s: string) => `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
 export async function setupCatalogRoutes(app: Application) {
+  app.get('/api/catalog/context', (_req, res) => {
+    res.json({ catalog: CATALOG, schema: SCHEMA });
+  });
+
   await run(
     `CREATE TABLE IF NOT EXISTS ${GLOSSARY} (
        term STRING, definition STRING, related_table STRING, related_column STRING,

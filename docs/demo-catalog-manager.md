@@ -1,5 +1,11 @@
 # Catalog Manager — team live demo guide
 
+> **Current presenter guide (2026-11-05):** Use
+> [Team pre-demo and Summit video guide](./summit-team-demo.md).
+> The sections below contain historical space-scoped instructions and acceptance
+> notes. They are not the current script: Ask now uses Genie One MCP, and the
+> export tab is named **Prepare Pages export**.
+
 App: https://catalog-manager-7474649527621307.aws.databricksapps.com (workspace `dario-ws`)
 Code: [`catalog-manager/`](../catalog-manager/) · Acceptance evidence: [acceptance-2026-10-24.md](./acceptance-2026-10-24.md)
 
@@ -160,3 +166,25 @@ Workspace browser automation redirected to sign-in; sign-in/consent, visual
 rendering and opening the Page in a browser remain human acceptance items.
 Pages creation/import/publication was not exercised; this test retrieved an
 existing published Page. No new Page or glossary content was created.
+# Genie One restoration (2026-11-05)
+
+Ask now uses `system.ai.genie_one_mcp` again, superseding the space-scoped
+configuration described in earlier dated sections. The signed-in user's token
+is mandatory, with no service-principal fallback. The app is no longer restricted
+to Investigations Analyst. Accessible published Pages can inform answers.
+
+The deployed app's requested user scopes are `sql` and `ai-gateway`. After this
+change, authorize the app again in a browser if access is denied. The initial API
+check returned HTTP 403, but a retry at 09:56 UTC succeeded through the deployed
+Apps proxy: ask/poll completed with a published Page citation and its distinctive
+14-day / largest-recipient / 0.94 = 94% definition. Conversation:
+`f3c2df5e96d244f9b8a867b466a01984`.
+
+The migrated route was independently checked with a real user CLI OAuth token
+on loopback: it completed an answer citing the published Concentration of
+transfers Page and its 14-day / largest-recipient / 0.94 = 94 percent definition.
+This does not substitute for testing the deployed browser user's consent.
+
+Retest: open Ask, authorize, ask the same Page-definition question, inspect its
+source citation, then repeat with a second authorized user. Workspace Genie One
+and app answers may differ due to conversation context and generation.

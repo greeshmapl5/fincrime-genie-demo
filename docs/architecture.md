@@ -30,8 +30,9 @@ flowchart LR
 
 ## Catalog Manager and Discover Pages
 
-The implemented Catalog Manager app uses the space-scoped Genie Agent MCP
-(`/api/2.0/mcp/genie/{space_id}`) for Ask, restricted to the Investigations Analyst space, and `fincrime.gold` for metadata and glossary management. Discover Pages
+The implemented Catalog Manager app uses Genie One MCP
+(`system.ai.genie_one_mcp`) for Ask with the signed-in user's accessible context,
+not a single-space restriction, and `fincrime.gold` for metadata and glossary management. Discover Pages
 is a separate account-level, domain-governed Beta feature.
 
 ```text
@@ -39,8 +40,8 @@ Catalog Manager Glossary -> fincrime.gold.business_glossary -> Genie space
                          -> selected-term document download
                             -> Discover Pages / Genie Code bulk import
                                -> human review and publication -> Genie One
-Catalog Manager Ask -> user-forwarded OAuth token (genie scope) -> Genie space MCP
-                    -> Investigations Analyst space tables only (no Pages)
+Catalog Manager Ask -> user-forwarded OAuth token (ai-gateway scope) -> Genie One MCP
+                    -> accessible data and published Pages
 ```
 
 The Pages tab is a manual import handoff, not a Pages CRUD API or two-way sync.
