@@ -3,7 +3,7 @@
 - **Domain:** Financial Crime
 - **Synonyms:** case procedure, escalation steps, investigation steps
 - **Description:** The steps an investigator follows, and what the assistant may and may not do.
-- **Related assets and sources:** `fincrime.gold.alerts`, `fincrime.gold.structuring_candidates`, `fincrime.gold.case_notes`
+- **Related assets and sources:** `fincrime.data_products.alerts`, `fincrime.data_products.structuring_candidates`, `fincrime.data_products.case_notes`
 
 ## Definition
 

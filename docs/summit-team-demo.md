@@ -1,13 +1,18 @@
 # Catalog Manager: team pre-demo and Summit video guide
 
-Prepared: 2026-11-05. Audience: business stakeholders, architects and demo team.
+Reviewed: 2026-11-10. Audience: business stakeholders, architects and demo team.
 Team walkthrough: 20 minutes plus questions. Summit video proposal: 3 minutes.
 
 App: https://catalog-manager-7474649527621307.aws.databricksapps.com
 
-This is the current presenter guide. It supersedes the older screenshot's
-single-space Ask narrative. Source inspection was performed for this guide;
-the prompts below are a rehearsal script, not a new live acceptance run.
+This is the presenter guide. It supersedes the older screenshot's single-space
+Ask narrative, but it is not a new end-to-end acceptance run. **Current identity
+caveat:** the repository Ask implementation forwards the signed-in user's token,
+but the deployed app last reported `app-service-principal`. Check the live
+`/api/ask/identity` before recording and do not claim Ask runs as the presenter
+until the deployment and repository behavior are aligned. A second non-owner
+access-request flow in the browser is unverified. 12 Pages are published (checked
+2026-11-11), but importing an app export with Genie Code is not yet verified.
 
 ## 1. The story to tell
 
@@ -26,7 +31,7 @@ and editing a comment does not guarantee an immediate change in an AI answer.
 
 | Image statement / expectation | Accurate statement for this app |
 |---|---|
-| "Ask is limited to our Genie space" | Ask uses Genie One MCP and the user's accessible context, not a hard single-space boundary. Use `fincrime.gold` in prompts to focus the investigation; that is context, not authorization. |
+| "Ask is limited to our Genie space" | Ask uses Genie One MCP, not a hard single-space boundary. Repository code uses the caller's token, but the deployed app last reported `app-service-principal`; verify the live identity and do not promise a user's access context until resolved. Use `fincrime.data_products` tables/views in demo queries. |
 | "7 customers" | Seven is the seeded dataset's expected result. Rehearse against current data; do not promise a fixed result without checking it. |
 | "Show a bar chart" | The custom UI renders answer text, Markdown tables, SQL, and any embedded statement-response JSON, not native chart widgets. Use **Open in Genie One** for a workspace visualization if available and rehearsed. |
 | "Who changed what is recorded" | No app-level per-user change-history screen exists. Catalog/Glossary use app identity; the glossary's owner field is entered text, not authenticated authorship. |
@@ -56,7 +61,7 @@ flowchart TD
     P --> UI["React UI hosted by Catalog Manager"]
     UI --> A["Ask API: Node / Express"]
     P -. "Forwarded signed-in user token" .-> A
-    A -->|"MCP: genie_ask / genie_poll_response"| G["Unity Gateway: system.ai.genie_one_mcp"]
+    A -->|"Genie One MCP: repository code forwards caller token; live deployment identity must be checked"| G["Unity Gateway: system.ai.genie_one_mcp"]
     G --> GO["Genie One: accessible data and business context"]
     GO --> D["Governed data in Unity Catalog"]
     GO --> PG["Accessible published Discover Pages"]
@@ -64,7 +69,7 @@ flowchart TD
     C -->|"App service principal via Statement Execution API"| W["Configured SQL warehouse"]
     C -->|"App service principal: tag-policies REST API"| TP["Account governed tag policies"]
     W --> M["Unity Catalog metadata: information_schema, comments, tags"]
-    W --> T["fincrime.data_products tables/views, including business_glossary"]
+    W --> T["fincrime.data_products: table copies, live views, app-owned glossary"]
     UI --> AC["Access API: requests and approvals"]
     P -. "Forwarded signed-in user token" .-> AC
     AC -->|"Signed-in user: GRANT / REVOKE / SHOW GRANTS"| W
@@ -75,7 +80,9 @@ flowchart TD
     H --> PG
 ```
 
-Solid arrows are implemented request paths. Dashed publication is manual.
+Solid arrows are implemented request paths. The Ask identity label describes the
+repository implementation; the deployed app last reported app-service-principal.
+Dashed publication is manual.
 The custom Catalog/Glossary API uses the configured warehouse directly; do not
 claim the Genie One service is forced to use that same warehouse or one space.
 
@@ -83,7 +90,7 @@ claim the Genie One service is forced to use that same warehouse or one space.
 
 | Operation | Executing identity | Consequence |
 |---|---|---|
-| Ask / poll Genie One | Signed-in user's forwarded OAuth token | Their service, domain and data permissions apply. No app-service-principal fallback. |
+| Ask / poll Genie One | **Deployed app:** last reported `app-service-principal`. **Repository code:** signed-in user's forwarded OAuth token. | The identity decision remains open. Check `/api/ask/identity` live; do not describe Ask as caller-scoped until deployment and source agree. |
 | List Catalog objects, preview rows, change comments/tags | App service principal through `WorkspaceClient` | The view and allowed changes reflect app identity, not per-user data filtering. |
 | Request access; approve, reject, grant or remove read access | Signed-in user's forwarded token for `GRANT`/`REVOKE` and the read/manage checks; the app service principal only stores request rows | Unity Catalog checks each grant as the approver, so only owners, MANAGE holders and admins can approve ([decision 0005](../decisions/0005-access-approvals-as-approver.md)). |
 | Read/write/delete Glossary terms | App service principal | No authenticated per-user author attribution is captured by this app. |
@@ -91,8 +98,9 @@ claim the Genie One service is forced to use that same warehouse or one space.
 | Publish a Page | Human performing the workspace action | Requires their publication/domain rights. |
 
 Say:
-> "Ask and access approvals preserve the caller's identity. Metadata editing currently uses app
-> identity. That is a prototype boundary we need to address before broad production use."
+> "Access approvals run as the approver. Ask's repository implementation forwards the caller,
+> but the deployed app last reported app identity; we are aligning those before making a
+> caller-identity claim. Catalog and Glossary metadata operations use app identity."
 
 App logs are operational diagnostics, not a complete business audit trail.
 Platform audit records require separate access and verification; do not present
@@ -101,33 +109,39 @@ enable masking or deny access; an applicable policy must be configured separatel
 
 ## 3. Where the demo data comes from
 
-The repository's data-generation and gold-build notebooks prepare fictional data
+**2026-11-17 cutover warning:** the replacement code below is prepared, but the
+live independent-view migration is blocked by Lakebase source permissions.
+Live data-product views still depend on gold; do not drop it or claim Ask is
+schema-restricted. The existing app is running again.
+
+The repository's data-generation and data-product notebooks prepare fictional data
 before the app runs. The app does not run those notebooks when a user opens it.
 
 - [Bronze generator](../src/01_generate_bronze_data.py): synthetic source data.
-- [Gold products](../src/02_build_gold_data_products.py): curated tables/views,
+- [Curated products](../src/02_build_gold_data_products.py): curated tables/views built directly in `data_products`,
   comments and checks for the planted investigation story.
-- Gold tables include `customer_360`, `transactions`, `counterparties` and `case_notes`.
-- Views include `alerts`, `structuring_candidates`, `counterparty_network` and `data_as_of`.
-- [Data products](../src/06_build_data_products.py): copies the gold data sets
-  (and `policy_docs`) into `fincrime.data_products` as snapshot tables, plus
-  `demo_sandbox`. This is the schema Catalog shows.
+- Product tables include `customer_360`, `transactions`, `counterparties` and `case_notes`.
+- Product views include `alerts`, `structuring_candidates`, `counterparty_network` and `data_as_of`.
+- [Data products setup](../src/06_build_data_products.py): optional one-time migration
+  from gold, relocating view logic instead of wrapping gold. Normal runs only
+  initialize `demo_sandbox` and verify products. Catalog shows 12 objects:
+  8 tables and 4 independent views. The glossary stays app-owned.
 - [Policy preparation](../src/03_policy_docs.py): fictional policy sections in
-  `fincrime.gold.policy_docs`, not a live PDF retrieval service.
+  `fincrime.data_products.policy_docs`, not a live PDF retrieval service.
 - [Glossary-space setup](../src/05_genie_glossary_space.py): separately points a
   curated Genie space at the glossary table (adding it, or moving it from `gold`)
   and adds lookup instructions; `--dry-run` writes a preview first. This is not
   the current Ask request path or an automatic Genie One publication mechanism.
 
 Lakebase is part of the wider demo architecture for investigator decisions.
-The gold notebook uses `fincrime_source.public.case_decisions` if that catalog
+The product notebook uses `fincrime_source.public.case_decisions` if that catalog
 exists; otherwise it uses a local Delta fallback. **Verify the live view's
 dependency before claiming live Lakebase integration.** This app has no
 investigator-decision write-back screen.
 
 ### Explain the planted structuring story accurately
 
-The gold view selects customers with at least five incoming cash deposits of
+The `structuring_candidates` view selects customers with at least five incoming cash deposits of
 9,000 to below 10,000 SEK in its last-14-day window. These are fictional demo
 thresholds, not an assertion about a statutory reporting threshold.
 
@@ -159,8 +173,9 @@ An investigator decides; the app does not determine criminality.
 > definitions without editing application code. The underlying data stays in Databricks."
 
 **Explain:** React runs in the browser; Databricks Apps hosts the Node backend
-and compiled assets. Backend calls use either user identity or app identity,
-depending on the feature.
+and compiled assets. Catalog/Glossary use app identity; access grants use the
+approver's identity. Ask identity differs between the repository implementation
+and the last verified deployment, so check it before making a claim.
 
 **Verify:** The app opens under the chosen recording account. Do not equate
 a successful homepage load with successful Genie authorization.
@@ -171,7 +186,7 @@ a successful homepage load with successful Genie authorization.
 then expand **Generated SQL and results** when present.
 
 **Prompt 1:**
-> "Using fincrime.gold.structuring_candidates, which customers are structuring
+> "Using fincrime.data_products.structuring_candidates, which customers are structuring
 > candidates? List customer_id, near_threshold_deposits, account_age_days,
 > outflow_to_inflow_ratio, top_onward_counterparty and
 > top_onward_counterparty_share. Explain the candidate rule and data-as-of date."
@@ -183,13 +198,15 @@ then expand **Generated SQL and results** when present.
 
 **Say:**
 > "The frontend is not inventing an answer or running a hardcoded report.
-> It calls our backend, which invokes Genie One through MCP using my identity.
-> I can inspect the SQL when the answer includes a query."
+> It calls our backend, which invokes Genie One through MCP. I can inspect the
+> SQL when the answer includes a query. The live identity is shown by the app
+> and must be verified before describing whose permissions apply."
 
 **Behind the scenes:**
 1. The UI posts `action: ask` and the question to `/api/ask`.
-2. The backend requires forwarded user and access-token headers and validates
-   the request with Zod.
+2. The repository backend requires forwarded user and access-token headers and
+   validates the request with Zod. The last verified deployed identity differs;
+   check `/api/ask/identity` before the demo.
 3. It creates a fresh MCP client and calls `genie_ask` on
    `/ai-gateway/mcp-services/system.ai.genie_one_mcp?o=<workspace-id>`.
 4. The service returns conversation/response IDs. The UI polls approximately
@@ -213,11 +230,12 @@ in the UI, not the server-side Genie operation. For a rehearsed chart, follow
 **Show:** Catalog, a table's columns, classification, governed tags and 20-row preview.
 For writes, use the `demo_sandbox` table, not customer business tables.
 
-> **Update 2026-11-09 (E1-S15):** Catalog now browses `fincrime.data_products`
-> ("Data products"): snapshot copies of the gold data sets plus `demo_sandbox`.
-> `gold.smoke_test` is no longer listed. To restore the sandbox and all
-> descriptions and tags, run `src/06_build_data_products.py` with
-> `reset_metadata = true`.
+> **Update 2026-11-17 (E1-S15):** Catalog browses `fincrime.data_products`
+> ("Data products"): independent tables and live views replacing gold, plus `demo_sandbox`.
+> It now includes `data_as_of` and a copy of `smoke_test`; use only `demo_sandbox`
+> for live edits. Notebook 06 normally preserves governance metadata. Set
+> `reset_metadata = true` only for an intentional reset: it removes
+> destination-only tags, including governed certification.
 
 **Before editing:** Capture its existing description and classification privately
 so they can be restored. Ensure no other teammate is editing that object.
@@ -260,13 +278,18 @@ unless the exact change has been rehearsed and the changed answer is observed.
 any governed tag) after the walkthrough.
 
 **Access requests ([E1-S16](../backlog/stories/E1-S16-access-requests.md)):** On `demo_sandbox`,
-open the **Access** card and request read access for the group `daiwt2026` with a reason.
-Approvers see "1 pending" in the table list. Under **Requests to review**, **Approve** it,
-then show the grant in Catalog Explorer › `demo_sandbox` › Permissions.
+have a second person request read access for `daiwt2026` with a reason. Only
+`daiwt2026` and `capgemini-gen-ai` are currently allowed by `ACCESS_GROUPS`;
+missing/empty configuration allows no groups. Nobody can approve their own
+request or grant themselves access. Approvers see "1 pending" in the table list.
+Under **Requests to review**, the owner/MANAGE holder approves it, then show the
+grant in Catalog Explorer › `demo_sandbox` › Permissions. This second-user
+browser flow is still awaiting acceptance.
 
 **Say:**
-> "Anyone can ask for access, with a reason. The approval runs as the approver, so
-> Unity Catalog decides whether they may grant it, and the grant is made in their name."
+> "A signed-in user can request access for themselves or an allowed group, with a
+> reason. A different authorized person must approve; Unity Catalog checks whether
+> that approver may grant access."
 
 **Behind the scenes:** Approve runs `GRANT USE SCHEMA` and `GRANT SELECT` with the
 approver's forwarded token; the app service principal cannot grant. Requests are rows
@@ -287,7 +310,7 @@ clearly temporary rehearsal term that does not overwrite a real term.
 - Term: `Demo - concentration of transfers`
 - Definition: "Share of a customer's outgoing transfer amount over the last
   14 days paid to the largest recipient, from 0 to 1. A value of 0.94 means 94%."
-- Related table: `fincrime.gold.structuring_candidates`
+- Related table: `fincrime.data_products.structuring_candidates`
 - Related column: `top_onward_counterparty_share`
 - Owner: leave blank, or use a non-personal team role such as `Demo team`.
 
@@ -324,7 +347,7 @@ content. The confirmation is a UI gate, not a content scanner or approval record
 **Optional workspace action:** In Discover, use the available Pages/Genie Code
 import workflow, review duplicates and draft content, verify assets and owners,
 then publish only with the authorized human's approval. Workspace navigation may
-vary; rehearse the actual UI. No automatic Pages CRUD/list/sync integration exists.
+vary; rehearse the actual UI. The app has no Pages CRUD/list/sync integration.
 
 **Fallback:** Show the export and a pre-published Page. Say explicitly that
 publication was completed beforehand. Do not create a duplicate Page just for filming.
@@ -396,7 +419,7 @@ end-to-end live import during the final take. This guide does not create a video
 | Time | Picture / action | Voiceover |
 |---|---|---|
 | 0:00-0:20 | Home and title: "From data to shared business meaning" | "Investigators need trustworthy context, not just a list of transactions. This Databricks App brings questions, metadata and reviewed definitions together." |
-| 0:20-1:00 | Ask candidate question; show completed evidence and expand SQL | "We ask in plain language. Genie One is called through MCP as the signed-in user. We inspect the SQL and the pattern rather than treating an AI answer as a decision." |
+| 0:20-1:00 | Ask candidate question; show completed evidence and expand SQL | "We ask in plain language through Genie One MCP. We inspect the SQL and pattern rather than treating an AI answer as a decision. The deployed Ask identity is verified before recording." |
 | 1:00-1:25 | Catalog sandbox description edit; briefly show the same UC comment | "Business users can improve descriptions and classification at the catalog source. This prototype performs metadata operations through the app identity." |
 | 1:25-1:50 | Glossary term, then export preview/review gate | "A business definition starts as a glossary draft. We review proposed content before exporting it for publication." |
 | 1:50-2:10 | Pre-published Page in Discover, labelled "Published beforehand" | "A domain owner reviews and publishes the Page in Databricks. Export is a manual handoff, not automatic publication." |
@@ -429,12 +452,14 @@ from section 2; no animated claims about unimplemented integrations.
 ### Before the team session / recording
 
 - [ ] Check app RUNNING and compute ACTIVE; authenticated health responds.
+- [ ] Check the actual deployed `/api/ask/identity`; the last recorded live value is `app-service-principal`, while repository code is on-behalf-of-user. Resolve or clearly disclose the mismatch before recording.
 - [ ] Rehearse both investigation and published-Page questions in the actual app.
-- [ ] Test the designated second user. Existing workspace app access and inherited
-  account-users MCP EXECUTE have been observed, but second-user 403 remains unresolved.
-- [ ] On 403, verify current OAuth consent for `ai-gateway`, then effective
-  service/parent/domain/data access with an administrator. Do not switch to a
-  shared identity to disguise failure.
+- [ ] Test the designated second user for Ask and access requests separately.
+  Ask's caller-token path and the deployed app identity differ; a successful test
+  in one path does not validate the other.
+- [ ] If the deployed path is on-behalf-of-user and returns 403, verify current
+  OAuth consent for `ai-gateway`, then effective service/parent/domain/data access
+  with an administrator. Do not mask an identity mismatch as an authorization fix.
 - [ ] Confirm the Page citation opens for the presenter and intended audience.
 - [ ] Inspect current seed results/date; do not rerun data generators blindly.
 - [ ] Confirm `demo_sandbox` exists (or run `src/06_build_data_products.py` with
@@ -454,7 +479,7 @@ from section 2; no animated claims about unimplemented integrations.
 
 | Symptom | Presenter action |
 |---|---|
-| Ask 403 | Explain per-user authorization failure; use a previously captured, labelled example. Do not claim all-user acceptance. |
+| Ask 403 | Check the deployed `/api/ask/identity` first. If it reports caller identity, verify consent and effective access; if it reports app identity, investigate the deployment mismatch. Do not claim all-user acceptance. |
 | Long-running answer | Explain asynchronous polling; move to Catalog and return later, or use a labelled recording. |
 | Access 403 "Databricks refused this for your account" | The presenter cannot grant on that table. Present it as the governance boundary; approve as the table owner. |
 | Wrong source / result | Inspect SQL/source; add the specific data product and time context. Acknowledge the failed response rather than editing the meaning live. |
@@ -478,8 +503,9 @@ from section 2; no animated claims about unimplemented integrations.
 **Is this a new chatbot model?** No. It is an app using Genie One through MCP.
 The UI, validation and orchestration are ours; response generation is Databricks.
 
-**Does MCP bypass Unity Catalog?** No. It is the tool interface. The Ask caller's
-service/data access remains relevant. The separate metadata path uses app identity.
+**Does MCP bypass Unity Catalog?** No. It is the tool interface. The effective
+Ask identity determines whose service/data access applies; the deployed identity
+must be checked. The separate metadata path uses app identity.
 
 **Why keep Glossary if Pages exist?** It is a convenient editable draft table
 and export source. Pages are separately reviewed/published business context.
@@ -498,7 +524,8 @@ enforcement policy must be configured separately.
 **Can the app certify tables or apply governed tags?** Yes for
 `system.certification_status`, the `Financial Crime` domain tag and `class.*`
 column tags, once an account admin grants the app service principal ASSIGN on
-them (not granted as of 2026-11-06). Changes are attributed to the service principal.
+them (still not granted when rechecked 2026-11-09). Changes are attributed to
+the service principal.
 
 **Can we show who edited a definition?** Not as a verified human audit trail
 today. Glossary owner and updated time are not authenticated edit history.

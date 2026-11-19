@@ -1,4 +1,4 @@
-"""Add fincrime.gold.policy_docs and policy rules to an existing Genie space (story E1-S9).
+"""Add fincrime.data_products.policy_docs and policy rules to an existing Genie space (story E1-S9).
 
 Usage: py -3 src/04_genie_policy_space.py <profile> <space_id>
 Backs up the current serialized space to ./space_backup_<space_id>.json before updating.
@@ -10,10 +10,10 @@ import tempfile
 import uuid
 
 profile, space_id = sys.argv[1], sys.argv[2]
-TABLE = "fincrime.gold.policy_docs"
+TABLE = "fincrime.data_products.policy_docs"
 
 POLICY_RULES = """
-Policy questions (table fincrime.gold.policy_docs):
+Policy questions (table fincrime.data_products.policy_docs):
 - policy_docs holds fictional policy documents, one row per section (document_title, section_title, section_number, content). For any question about a policy, procedure, rule, deadline, late request or escalation, answer only from policy_docs.
 - Search policy_docs with broad keyword filters on content and section_title (for example LOWER(content) LIKE '%late%' or '%deadline%') before concluding that a topic is not covered. A question about a request submitted after the deadline is answered by the section Late requests.
 - End every policy answer with a line in exactly this form: Source: <document_title>, section <section_title>. Use one such line per section used. Quote or closely paraphrase the content and do not add rules that are not in the table.
@@ -24,11 +24,11 @@ Policy questions (table fincrime.gold.policy_docs):
 
 BENCHMARKS = [
     ("What does the escalation policy require?",
-     "SELECT document_title, section_title, content FROM fincrime.gold.policy_docs WHERE section_title = 'Escalation'"),
+     "SELECT document_title, section_title, content FROM fincrime.data_products.policy_docs WHERE section_title = 'Escalation'"),
     ("How soon must I submit an expense reimbursement request?",
-     "SELECT document_title, section_title, content FROM fincrime.gold.policy_docs WHERE section_title = 'Submission deadline'"),
+     "SELECT document_title, section_title, content FROM fincrime.data_products.policy_docs WHERE section_title = 'Submission deadline'"),
     ("What does the policy say about a request submitted after the deadline?",
-     "SELECT document_title, section_title, content FROM fincrime.gold.policy_docs WHERE section_title = 'Late requests'"),
+     "SELECT document_title, section_title, content FROM fincrime.data_products.policy_docs WHERE section_title = 'Late requests'"),
 ]
 
 

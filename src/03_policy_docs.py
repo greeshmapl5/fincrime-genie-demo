@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 profile, warehouse = sys.argv[1], sys.argv[2]
-target = sys.argv[3] if len(sys.argv) > 3 else "fincrime.gold"
+target = sys.argv[3] if len(sys.argv) > 3 else "fincrime.data_products"
 
 INV = "Investigation Procedure"
 EXP = "Expense Reimbursement Policy"
@@ -38,7 +38,9 @@ def q(s):
 
 rows = ",\n".join(f"({q(d)}, {q(s)}, {n}, {q(c)})" for d, s, n, c in SECTIONS)
 stmts = [
-    f"CREATE OR REPLACE TABLE {target}.policy_docs AS SELECT * FROM VALUES\n{rows}\n"
+    f"CREATE TABLE IF NOT EXISTS {target}.policy_docs AS SELECT * FROM VALUES\n{rows}\n"
+    "AS t(document_title, section_title, section_number, content)",
+    f"INSERT OVERWRITE {target}.policy_docs BY NAME SELECT * FROM VALUES\n{rows}\n"
     "AS t(document_title, section_title, section_number, content)",
     f"COMMENT ON TABLE {target}.policy_docs IS 'Fictional policy documents, one row per section. "
     "Cite document_title and section_title. Not regulatory guidance.'",

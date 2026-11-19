@@ -26,8 +26,8 @@ A demo where a bank investigator asks questions in plain English (Genie), gets a
 |---|---|
 | `src/00_lakebase_case_decisions.sql` | Creates and seeds the decisions table. Run in the **Lakebase** SQL editor |
 | `src/01_generate_bronze_data.py` | Generates the fictional bank into `fincrime.bronze` (seeded, deterministic) |
-| `src/02_build_gold_data_products.py` | Builds gold tables and views, tags, and a verification cell |
-| `src/06_build_data_products.py` | Copies the gold data sets into `fincrime.data_products` (the schema Catalog Manager shows) as snapshot tables, plus `demo_sandbox` |
+| `src/02_build_gold_data_products.py` | Prepared direct `data_products` build from bronze/Lakebase; live cutover blocked by source privileges |
+| `src/06_build_data_products.py` | Prepared optional migration of independent view logic; live views still wrap gold until permissions/cutover pass |
 | `docs/genie/` | Space instructions, example SQL, 22 benchmark questions, copy-paste version |
 | `pages/` | Five Pages texts and a publishing guide |
 | `dashboards/` | MLRO dashboard export (`.lvdash.json`) |
@@ -48,8 +48,8 @@ A demo where a bank investigator asks questions in plain English (Genie), gets a
 
 ## 5. Design decisions worth keeping
 
-- **Decisions live in Lakebase only.** `gold.alerts` joins them, so there is one source of truth. The lakehouse reads Lakebase read-only through the catalog.
-- **Logic lives in gold views, not in Genie's prose.** Counts and ratios are columns (for example `inflows_exceed_expected_volume`, `top_onward_counterparty_share`), because Genie's written counts slipped in testing.
+- **Decisions live in Lakebase only.** `data_products.alerts` joins them, so there is one source of truth. The lakehouse reads Lakebase read-only through the catalog.
+- **Logic lives in data_products views, not in Genie's prose.** Counts and ratios are columns (for example `inflows_exceed_expected_volume`, `top_onward_counterparty_share`), because Genie's written counts slipped in testing.
 - **Time windows are measured from the latest data** (`data_as_of`), not today, so answers do not drift.
 - **Inflows only** when comparing with expected volume, never inflows plus outflows.
 - **Neutral language everywhere.** "Consistent with" a pattern, never guilt, intent or a recommendation to file or escalate.

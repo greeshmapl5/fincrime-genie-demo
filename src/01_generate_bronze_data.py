@@ -289,7 +289,7 @@ case_notes_pdf.insert(0, "note_id", [f"N{n + 1:05d}" for n in range(len(case_not
 
 # COMMAND ----------
 
-for schema in ("bronze", "silver", "gold"):
+for schema in ("bronze", "silver", "data_products"):
     spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.{schema}")
 
 

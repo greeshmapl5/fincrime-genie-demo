@@ -36,5 +36,5 @@ Rules:
 ```
 
 ## Notes
-- Written counts in Genie's narrative have been wrong in earlier tests while tables and SQL stayed right. The gold views reduce this, the rules above mitigate it, and the presenter should read from the table or chart.
+- Written counts in Genie's narrative have been wrong in earlier tests while tables and SQL stayed right. The `data_products` views reduce this, the rules above mitigate it, and the presenter should read from the table or chart.
 - When Pages grounding works in the demo flow, move the definitions to Pages and keep only the rules here.

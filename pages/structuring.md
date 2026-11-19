@@ -3,7 +3,7 @@
 - **Domain:** Financial Crime
 - **Synonyms:** smurfing, deposit splitting, threshold avoidance
 - **Description:** Repeated cash deposits just below the internal review threshold within a short window.
-- **Related assets and sources:** `fincrime.gold.transactions`, `fincrime.gold.alerts`, `fincrime.gold.customer_360`, `fincrime.gold.structuring_candidates`
+- **Related assets and sources:** `fincrime.data_products.transactions`, `fincrime.data_products.alerts`, `fincrime.data_products.customer_360`, `fincrime.data_products.structuring_candidates`
 
 ## Definition
 

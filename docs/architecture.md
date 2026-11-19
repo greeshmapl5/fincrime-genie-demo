@@ -30,20 +30,37 @@ flowchart LR
 
 ## Catalog Manager and Discover Pages
 
-The implemented Catalog Manager app uses Genie One MCP
-(`system.ai.genie_one_mcp`) for Ask with the signed-in user's accessible context,
-not a single-space restriction. Catalog browses `fincrime.data_products` (no medallion layers shown,
-[decision 0004](../decisions/0004-data-products-schema.md)), including the glossary, and access
-requests are stored in `fincrime.catalog_manager`. Discover Pages
-is a separate account-level, domain-governed Beta feature.
+The repository's Catalog Manager Ask implementation uses Genie One MCP
+(`system.ai.genie_one_mcp`) with the signed-in user's accessible context, not a
+single-space restriction. **The deployed app last reported
+`app-service-principal` for Ask**; do not treat the repository identity as the
+live identity until the deployment is aligned and retested. Catalog browses
+`fincrime.data_products` (no medallion layers shown,
+[decision 0004](../decisions/0004-data-products-schema.md)), including the glossary,
+and access requests are stored in `fincrime.catalog_manager`. Discover Pages is a
+separate account-level, domain-governed Beta feature.
+
+**Cutover status (2026-11-17): BLOCKED by upstream Lakebase permissions.**
+The following is the prepared replacement design, not the live state. The live
+views still wrap gold, and Ask still uses workspace-wide Genie One.
+
+The clarified 2026-11-17 requirement is a **replacement**, not a layer over gold.
+Notebook 02 builds directly from bronze/Lakebase into `data_products`; its four
+views contain the original business logic with internal references moved to
+`data_products`. Notebook 03 writes policy documents there too. Notebook 06 is now
+an optional one-time migration (`migrate_from_source=true`), followed by sandbox
+initialization/verification; ordinary runs do not read gold.
+The app-owned glossary and destination-only sandbox are preserved. Gold is kept
+only pending consumer cutover and separately approved deletion (decision 0004).
 
 ```text
 Catalog Manager Glossary -> fincrime.data_products.business_glossary -> Genie space
                          -> selected-term document download
                             -> Discover Pages / Genie Code bulk import
                                -> human review and publication -> Genie One
-Catalog Manager Ask -> user-forwarded OAuth token (ai-gateway scope) -> Genie One MCP
-                    -> accessible data and published Pages
+Catalog Manager Ask (repository code) -> user-forwarded OAuth token (ai-gateway scope) -> Genie One MCP
+                                      -> accessible data and published Pages
+Catalog Manager Ask (last deployed identity check) -> app service principal -> Genie One MCP
 Catalog Manager Access card -> user-forwarded OAuth token (sql scope)
                                -> GRANT / REVOKE on fincrime.data_products
                             -> app SP -> request rows in fincrime.catalog_manager.access_requests
@@ -51,9 +68,10 @@ Catalog Manager Access card -> user-forwarded OAuth token (sql scope)
 
 The Pages tab is a manual import handoff, not a Pages CRUD API or two-way sync.
 No documented public Pages CRUD API was identified during implementation.
-Publication remains manual. Page citations can now be checked in Ask; the
-2026-10-28 live API check returned the Concentration of transfers Page definition
-and citation through the deployed app. Each MCP request uses the caller's token
+Publication remains manual. The 2026-10-28 live API check returned the
+Concentration of transfers Page definition and citation through the deployed
+app; this is historical acceptance evidence, not proof of the current identity
+or second-user access. The repository Ask implementation uses the caller's token
 without app-SP fallback, shared clients, or a conversation cache. Metadata writes
 remain app-SP operations; a user-attributed change audit is not implemented for them.
 Access grants and revokes run with the signed-in approver's token

@@ -1,11 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # 02 - Build the gold data products
+# MAGIC # 02 - Build the independent data products
 # MAGIC
 # MAGIC Prerequisites: `01_generate_bronze_data` has run, and `00_lakebase_case_decisions.sql` has run in Lakebase with the project registered
 # MAGIC as catalog `fincrime_source`. If that catalog is missing, a local Delta table with the same seed is used instead, so the notebook still works.
 # MAGIC
-# MAGIC Creates in `<catalog>.gold`:
+# MAGIC Creates directly in `<catalog>.data_products` (the filename is retained for existing notebook links):
 # MAGIC - tables `customer_360`, `transactions`, `counterparties`, `case_notes`
 # MAGIC - views `data_as_of`, `alerts` (status comes from investigator decisions in Lakebase), `structuring_candidates`, `counterparty_network`
 # MAGIC
@@ -15,15 +15,17 @@
 
 dbutils.widgets.text("catalog", "fincrime", "Catalog")
 dbutils.widgets.text("lakebase_catalog", "fincrime_source", "Lakebase catalog")
-dbutils.widgets.dropdown("cleanup_old_tests", "false", ["false", "true"], "Drop the early smoke-test objects")
+dbutils.widgets.dropdown("reset_metadata", "false", ["false", "true"], "Reset product descriptions to build defaults")
 
 CATALOG = dbutils.widgets.get("catalog")
 LAKEBASE = dbutils.widgets.get("lakebase_catalog")
-B, G = f"{CATALOG}.bronze", f"{CATALOG}.gold"
+B, G = f"{CATALOG}.bronze", f"{CATALOG}.data_products"
+RESET = dbutils.widgets.get("reset_metadata") == "true"
+NEW_TABLES = set()
 
 
 def esc(text):
-    return text.replace("'", "\\'")
+    return text.replace("\\", "\\\\").replace("'", "\\'")
 
 
 def run(sql):
@@ -38,14 +40,36 @@ def try_run(sql):
 
 
 def describe_table(name, table_comment, columns):
+    if name not in NEW_TABLES and not RESET:
+        return
     run(f"COMMENT ON TABLE {G}.{name} IS '{esc(table_comment)}'")
     for col, text in columns.items():
         run(f"COMMENT ON COLUMN {G}.{name}.{col} IS '{esc(text)}'")
 
 
 def create_view(name, view_comment, columns, select_sql):
+    if spark.catalog.tableExists(f"{G}.{name}"):
+        comments = spark.sql(f"DESCRIBE TABLE {G}.{name}").collect()
+        run(f"ALTER VIEW {G}.{name} AS {select_sql}")
+        for row in comments:
+            if row.col_name in columns and row.comment is not None:
+                run(f"COMMENT ON COLUMN {G}.{name}.`{row.col_name}` IS '{esc(row.comment)}'")
+        if not RESET:
+            return
+        run(f"COMMENT ON TABLE {G}.{name} IS '{esc(view_comment)}'")
+        for col, text in columns.items():
+            run(f"COMMENT ON COLUMN {G}.{name}.`{col}` IS '{esc(text)}'")
+        return
     column_list = ", ".join(f"{c} COMMENT '{esc(t)}'" for c, t in columns.items())
-    run(f"CREATE OR REPLACE VIEW {G}.{name} ({column_list}) COMMENT '{esc(view_comment)}' AS {select_sql}")
+    run(f"CREATE VIEW {G}.{name} ({column_list}) COMMENT '{esc(view_comment)}' AS {select_sql}")
+
+
+def build_table(name, select_sql):
+    if spark.catalog.tableExists(f"{G}.{name}"):
+        run(f"INSERT OVERWRITE {G}.{name} BY NAME {select_sql}")
+    else:
+        run(f"CREATE TABLE {G}.{name} AS {select_sql}")
+        NEW_TABLES.add(name)
 
 
 # COMMAND ----------
@@ -57,6 +81,8 @@ def create_view(name, view_comment, columns, select_sql):
 catalogs = {r[0] for r in spark.sql("SHOW CATALOGS").collect()}
 if LAKEBASE in catalogs:
     DECISIONS = f"{LAKEBASE}.public.case_decisions"
+    # Check direct source access before refreshing any product tables.
+    spark.sql(f"SELECT alert_id, decision, rationale, decided_at FROM {DECISIONS} LIMIT 0").collect()
     print("Using Lakebase decisions:", DECISIONS)
 else:
     DECISIONS = f"{B}.case_decisions_local"
@@ -75,22 +101,13 @@ else:
 
 # COMMAND ----------
 # MAGIC %md
-# MAGIC ## Gold tables
+# MAGIC ## Data product tables
 
 # COMMAND ----------
 
-# The early test notebook created gold.alerts as a table. It becomes a view now.
-for stmt in (f"DROP TABLE IF EXISTS {G}.alerts", f"DROP VIEW IF EXISTS {G}.alerts"):
-    try:
-        spark.sql(stmt)
-    except Exception:
-        pass
-if dbutils.widgets.get("cleanup_old_tests") == "true":
-    try_run(f"DROP TABLE IF EXISTS {G}.smoke_test")
-    try_run(f"DROP TABLE IF EXISTS {B}.smoke_txn")
+run(f"CREATE SCHEMA IF NOT EXISTS {G}")
 
-run(f"""
-    CREATE OR REPLACE TABLE {G}.customer_360 AS
+build_table("customer_360", f"""
     SELECT customer_id, customer_name, national_id, segment, sector, risk_tier, country, opened_date,
            CAST(expected_monthly_volume AS DECIMAL(18,2)) AS expected_monthly_volume
     FROM {B}.customers_raw
@@ -107,8 +124,7 @@ describe_table("customer_360", "One row per customer with KYC and risk attribute
     "expected_monthly_volume": "Expected monthly inflow value in SEK, captured at KYC",
 })
 
-run(f"""
-    CREATE OR REPLACE TABLE {G}.transactions AS
+build_table("transactions", f"""
     SELECT t.txn_id, t.customer_id, t.txn_ts, CAST(t.amount AS DECIMAL(18,2)) AS amount, 'SEK' AS currency,
            t.channel, t.direction, t.counterparty_id, cp.counterparty_type
     FROM {B}.transactions_raw t
@@ -126,8 +142,7 @@ describe_table("transactions", "One row per transaction over the last 90 days. F
     "counterparty_type": "Cash, Individual, Business, Merchant or Utility",
 })
 
-run(f"""
-    CREATE OR REPLACE TABLE {G}.counterparties AS
+build_table("counterparties", f"""
     SELECT counterparty_id, counterparty_type FROM {B}.counterparties_raw
 """)
 describe_table("counterparties", "Reference list of counterparties and their type. Fictional synthetic data.", {
@@ -135,8 +150,7 @@ describe_table("counterparties", "Reference list of counterparties and their typ
     "counterparty_type": "Cash, Individual, Business, Merchant or Utility",
 })
 
-run(f"""
-    CREATE OR REPLACE TABLE {G}.case_notes AS
+build_table("case_notes", f"""
     SELECT note_id, alert_id, customer_id, note_ts, note_text FROM {B}.case_notes_raw
 """)
 describe_table("case_notes", "Free-text investigator notes per alert. Used to demonstrate text AI functions. Fictional.", {
@@ -273,15 +287,15 @@ create_view("counterparty_network",
 
 # COMMAND ----------
 # MAGIC %md
-# MAGIC ## Governance: sensitivity and certification tags (skipped silently where unavailable)
+# MAGIC ## Initial governance defaults (existing app-edited tags are kept)
 
 # COMMAND ----------
 
-try_run(f"ALTER TABLE {G}.customer_360 ALTER COLUMN national_id SET TAGS ('sensitivity' = 'pii')")
+if "customer_360" in NEW_TABLES or RESET:
+    try_run(f"ALTER TABLE {G}.customer_360 ALTER COLUMN national_id SET TAGS ('sensitivity' = 'pii')")
 for name in ("customer_360", "transactions", "counterparties", "case_notes"):
-    try_run(f"ALTER TABLE {G}.{name} SET TAGS ('certified' = 'true')")
-for name in ("alerts", "structuring_candidates", "counterparty_network", "data_as_of"):
-    try_run(f"ALTER VIEW {G}.{name} SET TAGS ('certified' = 'true')")
+    if name in NEW_TABLES or RESET:
+        try_run(f"ALTER TABLE {G}.{name} SET TAGS ('certified' = 'true')")
 
 # COMMAND ----------
 # MAGIC %md

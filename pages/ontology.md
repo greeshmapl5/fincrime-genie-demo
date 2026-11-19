@@ -3,7 +3,7 @@
 - **Domain:** Financial Crime
 - **Synonyms:** data model, glossary, entities
 - **Description:** The business entities in the demo data, how they relate, and the words analysts use for them.
-- **Related assets and sources:** `fincrime.gold.customer_360`, `fincrime.gold.transactions`, `fincrime.gold.alerts`, `fincrime.gold.counterparty_network`, `fincrime.gold.structuring_candidates`
+- **Related assets and sources:** `fincrime.data_products.customer_360`, `fincrime.data_products.transactions`, `fincrime.data_products.alerts`, `fincrime.data_products.counterparty_network`, `fincrime.data_products.structuring_candidates`
 
 ## Definition
 

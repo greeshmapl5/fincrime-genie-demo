@@ -123,9 +123,10 @@ The older 2026-10-24 acceptance report describes the previous space-based chat.
 
 The **Pages** tab bridges the lakehouse glossary to the documented
 [Discover Pages bulk-import workflow](https://docs.databricks.com/aws/en/uc-semantics/pages#bulk-import-pages).
-It does not call a Pages CRUD API, browse live Pages, publish automatically, or
-synchronize edits in either direction. No documented public Pages CRUD API was
-identified in the official documentation or installed CLI/SDK during implementation.
+It does not call a Pages API, browse live Pages, publish automatically, or
+synchronize edits in either direction. No public Pages CRUD API was documented
+during implementation. A Beta Pages REST API (`/api/2.0/knowledge/pages`) has since
+been documented and works for reads on dario-ws (2026-11-11); the app does not use it.
 
 1. Save definitions on **Glossary**.
 2. Open **Pages**, refresh the glossary, enter an existing Discover domain or

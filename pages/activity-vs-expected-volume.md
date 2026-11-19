@@ -3,7 +3,7 @@
 - **Domain:** Financial Crime
 - **Synonyms:** unusual volume, above expectation, expected monthly volume
 - **Description:** How to compare a customer's activity with the expected monthly volume captured at onboarding.
-- **Related assets and sources:** `fincrime.gold.customer_360`, `fincrime.gold.transactions`, `fincrime.gold.structuring_candidates`
+- **Related assets and sources:** `fincrime.data_products.customer_360`, `fincrime.data_products.transactions`, `fincrime.data_products.structuring_candidates`
 
 ## Definition
 

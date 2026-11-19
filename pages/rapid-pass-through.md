@@ -3,7 +3,7 @@
 - **Domain:** Financial Crime
 - **Synonyms:** layering, funds in and out, flow-through
 - **Description:** Funds received are sent onward within a short time.
-- **Related assets and sources:** `fincrime.gold.transactions`, `fincrime.gold.structuring_candidates`, `fincrime.gold.counterparty_network`
+- **Related assets and sources:** `fincrime.data_products.transactions`, `fincrime.data_products.structuring_candidates`, `fincrime.data_products.counterparty_network`
 
 ## Definition
 

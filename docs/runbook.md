@@ -50,3 +50,83 @@ _TBD — tool, resolution, script, where the final file is stored._
 - [ ] Offline fallback (video) tested
 - [ ] Credentials valid and tested the day before
 - [ ] Demo reset script run
+
+## 7. Deploy Catalog Manager to another workspace
+Assessed 2026-11-13: **not turnkey yet** ([E3](../backlog/epics/E3-declarative-automation-bundles.md) has no stories). The server reads catalog, schemas and warehouse from the environment, and `npx vitest run` (122 tests) and `npm run typecheck` pass, but the config below is pinned to dario-ws. Not yet tried on a second workspace.
+
+**Pinned to dario-ws (change before deploying)**
+| Where | Value | Action |
+|---|---|---|
+| `catalog-manager/databricks.yml` | Only target `default`: dario-ws host, `sql_warehouse_id`, `genie_space_id` | Add a target with the new host and variables (the root `databricks.yml` shows the pattern). |
+| `catalog-manager/databricks.yml` | Required `genie-space` resource "Investigations Analyst" | The app code does not read it (Ask uses Genie One MCP). Create a space and pass its ID, or remove the resource. |
+| `catalog-manager/app.yaml` | `DATABRICKS_HOST`, `DATABRICKS_WORKSPACE_ID` | Ask builds the Genie One MCP URL from them (`server/genie-one.ts`, `https://` required); they override the values Databricks Apps injects. Set the new workspace URL and ID. |
+| `catalog-manager/app.yaml` | `ACCESS_GROUPS: daiwt2026,capgemini-gen-ai` | List account groups that exist in the target account. |
+| `client/src/pages/pages/PagesPage.tsx`, `pages-export.ts` | "Open dario-ws" link; `fincrime.data_products.business_glossary` source line | Cosmetic; needs a code change. |
+| `server/catalog.ts` | `DOMAIN_TAG = 'Financial Crime'` | Create that governed tag in the target account; otherwise the Governed tags card does not offer it. |
+
+**Workspace prerequisites, in order**
+1. Catalog `fincrime` and a SQL warehouse. The notebooks create `bronze`, `silver` and `gold`, not the catalog.
+2. Data: `src/01_generate_bronze_data.py`; optionally `src/00_lakebase_case_decisions.sql` in Lakebase plus catalog `fincrime_source` (without it, `02` uses a local fallback); `src/02_build_gold_data_products.py`; `py -3 src/03_policy_docs.py <profile> <warehouse_id>` (`06` copies `gold.policy_docs`).
+3. As the catalog owner: `CREATE SCHEMA IF NOT EXISTS fincrime.data_products` and `fincrime.catalog_manager` (no notebook creates them), then run `src/06_build_data_products.py` and create `business_glossary` (§5).
+4. `databricks bundle deploy -t <target>` from `catalog-manager/`, then note the app service principal under Compute › Apps › catalog-manager › Authorization.
+5. Grants as in §1: `USE SCHEMA`, `SELECT`, `MODIFY`, `APPLY TAG` on `data_products`; `USE SCHEMA`, `CREATE TABLE`, `SELECT`, `MODIFY` on `catalog_manager`; ASSIGN on the governed tags (account admin); `USE CATALOG` for readers; users need EXECUTE on `system.ai.genie_one_mcp`.
+6. Account and Discover setup: `Financial Crime` and needed `class.*` tag policies, the Financial Crime domain, and published Pages (E1-S13). Pages and governed tags are Beta.
+7. Open the app URL, accept the `sql` and `ai-gateway` consent, then check Catalog, Glossary, Access and one Ask question.
+
+Also decide which build to ship: the repo's Ask runs as the signed-in user, while dario-ws runs an app service principal build that matches no commit (HANDOVER action 8).
+
+## 8. Replace gold with independent data products
+The clarified 2026-11-17 requirement supersedes the earlier snapshot/wrapper design:
+`data_products` is the authoritative curated schema and must not depend on gold.
+
+**Live cutover is currently blocked.** The current data-product view/build owner
+lacks direct upstream Lakebase privileges; original gold views work because
+their owner has access. An upstream administrator must run the following for the
+intended view owner/build identity (replace the principal placeholder):
+
+```sql
+GRANT USE SCHEMA ON SCHEMA fincrime_source.public TO `<data-products-view-owner>`;
+GRANT SELECT ON TABLE fincrime_source.public.case_decisions TO `<data-products-view-owner>`;
+```
+
+`USE CATALOG` on `fincrime_source` is already present for the current identity.
+Do not grant all schema data or change app service-principal privileges for this.
+An independent live alerts view still needs its Lakebase input; dropping gold
+does not remove that requirement. Until permission and consumer tests pass,
+the existing live gold-backed view definitions stay in place.
+
+**Normal builds (no gold required):**
+1. Run 01 only when intentionally regenerating bronze synthetic data. It creates
+   `data_products`, not gold. Keep the existing Lakebase decision setup.
+2. Run [`02_build_gold_data_products.py`](../src/02_build_gold_data_products.py).
+   Despite its historical name, it now writes directly to `data_products`.
+   Existing tables are refreshed by name without replacement; existing view
+   definitions are altered with app-edited comments restored.
+3. Run `py -3 src\03_policy_docs.py dario-ws dea09e931a40e6e8` when refreshing
+   fictional policies; its default target is `fincrime.data_products`.
+4. Run [`06_build_data_products.py`](../src/06_build_data_products.py) with
+   `migrate_from_source=false`, `reset_metadata=false` to initialize the sandbox
+   and verify products. It does not read gold in this mode.
+
+**One-time migration of an existing gold installation:**
+- Back up source/destination definitions, owners, tags, comments and grants first.
+- Run 06 with `migrate_from_source=true`, `source_schema=gold`,
+  `target_schema=data_products`, `reset_metadata=false`. Source views' SQL is copied
+  with qualified internal references relocated to `data_products`; these are NOT
+  `SELECT * FROM gold.<view>` wrappers. Source bronze/Lakebase references remain.
+- Types must already match; a mismatch fails before writes. An old all-table
+  installation needs a separately staged, metadata-preserving table-to-view
+  migration first. Keep rollback definitions until all checks pass.
+- The glossary stays app-owned and is not overwritten; keep the extra sandbox.
+- A metadata reset during migration deliberately replaces app tags with source
+  tags (removing destination-only certification). Do not use it for cutover.
+
+**Deletion gate:** independent data objects alone do not prove all consumers have
+moved. Update and validate live dashboard drafts AND published snapshots, saved
+queries, deployed notebooks/jobs, and Genie instructions/examples/benchmarks.
+Keep gold until owners confirm no remaining consumers and approve deletion.
+Never use an unchecked schema-wide cascading drop. Bronze/Lakebase remain valid
+upstream dependencies and are not part of this replacement.
+
+Local regression tests: `py -3 -B -m unittest discover -s tests -p test_data_products.py -v`.
+Live validation also runs the notebook and compares `EXCEPT ALL` in both directions; equal row counts alone are insufficient.

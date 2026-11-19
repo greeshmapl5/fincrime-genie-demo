@@ -8,8 +8,8 @@
         "       COUNT_IF(status = 'Open' AND risk_score >= 0.8) AS high_priority_open,\r\n",
         "       COUNT_IF(status = 'Escalated') AS escalated,\r\n",
         "       COUNT_IF(status = 'Closed - false positive') AS closed_false_positive,\r\n",
-        "       (SELECT COUNT(*) FROM fincrime.gold.structuring_candidates) AS structuring_candidates\r\n",
-        "FROM fincrime.gold.alerts"
+        "       (SELECT COUNT(*) FROM fincrime.data_products.structuring_candidates) AS structuring_candidates\r\n",
+        "FROM fincrime.data_products.alerts"
       ]
     },
     {
@@ -17,7 +17,7 @@
       "displayName": "alerts_by_typology_status",
       "queryLines": [
         "SELECT typology, status, COUNT(*) AS alert_count\r\n",
-        "FROM fincrime.gold.alerts\r\n",
+        "FROM fincrime.data_products.alerts\r\n",
         "GROUP BY typology, status"
       ]
     },
@@ -29,7 +29,7 @@
         "       COUNT_IF(status = 'Escalated') AS escalated,\r\n",
         "       COUNT_IF(status = 'Closed - false positive') AS closed_false_positive,\r\n",
         "       ROUND(COUNT_IF(status = 'Escalated') / NULLIF(COUNT_IF(status != 'Open'), 0), 2) AS escalation_rate\r\n",
-        "FROM fincrime.gold.alerts\r\n",
+        "FROM fincrime.data_products.alerts\r\n",
         "GROUP BY typology"
       ]
     },
@@ -39,9 +39,9 @@
       "queryLines": [
         "SELECT a.alert_id, a.customer_id, c.segment, c.sector, a.typology, a.risk_score, a.alert_date,\r\n",
         "       DATEDIFF(CAST(d.as_of_ts AS DATE), a.alert_date) AS age_days\r\n",
-        "FROM fincrime.gold.alerts a\r\n",
-        "JOIN fincrime.gold.customer_360 c ON a.customer_id = c.customer_id\r\n",
-        "CROSS JOIN fincrime.gold.data_as_of d\r\n",
+        "FROM fincrime.data_products.alerts a\r\n",
+        "JOIN fincrime.data_products.customer_360 c ON a.customer_id = c.customer_id\r\n",
+        "CROSS JOIN fincrime.data_products.data_as_of d\r\n",
         "WHERE a.status = 'Open'\r\n",
         "ORDER BY a.risk_score DESC"
       ]
@@ -52,7 +52,7 @@
       "queryLines": [
         "SELECT customer_id, sector, account_age_days, near_threshold_deposits, outflow_to_inflow_ratio,\r\n",
         "       top_onward_counterparty, top_onward_counterparty_share, open_alert_id\r\n",
-        "FROM fincrime.gold.structuring_candidates\r\n",
+        "FROM fincrime.data_products.structuring_candidates\r\n",
         "ORDER BY top_onward_counterparty_share DESC"
       ]
     },
@@ -61,7 +61,7 @@
       "displayName": "decisions_per_week",
       "queryLines": [
         "SELECT DATE_TRUNC('week', decided_at) AS week, status, COUNT(*) AS decisions\r\n",
-        "FROM fincrime.gold.alerts\r\n",
+        "FROM fincrime.data_products.alerts\r\n",
         "WHERE status != 'Open'\r\n",
         "GROUP BY 1, 2\r\n",
         "ORDER BY 1"
